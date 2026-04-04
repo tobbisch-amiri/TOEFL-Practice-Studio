@@ -610,10 +610,31 @@
       const countdownNote = document.getElementById("countdown-note");
       const plainTextInput = document.getElementById("plain-text-input");
       const wordCount = document.getElementById("word-count");
+      const copyWritingButton = document.getElementById("copy-writing");
 
       let timerId = null;
       let remainingSeconds = Number(timerMinutes.value) * 60;
       let timerRunning = false;
+
+      function setCountdownNote(message, tone) {
+        if (!countdownNote) {
+          return;
+        }
+
+        countdownNote.textContent = message;
+        countdownNote.className = "countdown-note" + (tone ? " " + tone : "");
+      }
+
+      function updateCopyButtonVisibility(words) {
+        if (!copyWritingButton) {
+          return;
+        }
+
+        copyWritingButton.hidden = words === 0;
+        if (words === 0) {
+          copyWritingButton.textContent = "Copy";
+        }
+      }
 
       function updateTextCounts() {
         const text = plainTextInput.value;
@@ -621,28 +642,25 @@
         const words = trimmed ? trimmed.split(/\s+/).length : 0;
 
         wordCount.textContent = String(words);
+        updateCopyButtonVisibility(words);
       }
 
       function updateCountdownDisplay() {
         countdownTime.textContent = formatTime(remainingSeconds);
 
         if (!timerRunning) {
-          countdownNote.className = "countdown-note";
           if (plainTextInput.disabled) {
-            countdownNote.textContent = "Time's up!";
-            countdownNote.classList.add("is-danger");
+            setCountdownNote("Time's up! The writing time is over.", "is-danger");
           } else {
-            countdownNote.textContent = "Set your time and press start when you are ready.";
+            setCountdownNote("Set your time and press start when you are ready.");
           }
           return;
         }
 
         if (remainingSeconds <= 60) {
-          countdownNote.textContent = "Final minute. Keep your conclusion clear and concise.";
-          countdownNote.className = "countdown-note is-alert";
+          setCountdownNote("Final minute. Keep your conclusion clear and concise.", "is-alert");
         } else {
-          countdownNote.textContent = "Timer is running. Focus on flow, structure, and finishing within the limit.";
-          countdownNote.className = "countdown-note";
+          setCountdownNote("Timer is running. Focus on flow, structure, and finishing within the limit.");
         }
       }
 
@@ -677,8 +695,6 @@
         remainingSeconds = 0;
         plainTextInput.disabled = true;
         syncTimerControls();
-        countdownNote.textContent = "Time's up!";
-        countdownNote.className = "countdown-note is-danger";
         updateCountdownDisplay();
       }
 
@@ -686,8 +702,7 @@
         const minutes = Number(timerMinutes.value);
 
         if (!Number.isFinite(minutes) || minutes <= 0) {
-          countdownNote.textContent = "Please enter a valid number of minutes.";
-          countdownNote.className = "countdown-note is-danger";
+          setCountdownNote("Please enter a valid number of minutes.", "is-danger");
           return;
         }
 
@@ -713,11 +728,50 @@
 
       stopTimerButton.addEventListener("click", () => {
         resetTimerFromInput();
-        countdownNote.textContent = "Timer stopped early. You can adjust the minutes and start again.";
+        setCountdownNote("Timer stopped early. You can adjust the minutes and start again.");
       });
 
       timerMinutes.addEventListener("input", resetTimerFromInput);
       plainTextInput.addEventListener("input", updateTextCounts);
+      copyWritingButton.addEventListener("click", async () => {
+        const text = plainTextInput.value;
+
+        if (!text.trim()) {
+          return;
+        }
+
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const helper = document.createElement("textarea");
+            helper.value = text;
+            helper.setAttribute("readonly", "");
+            helper.style.position = "fixed";
+            helper.style.opacity = "0";
+            helper.style.pointerEvents = "none";
+            document.body.appendChild(helper);
+            helper.focus();
+            helper.select();
+            document.execCommand("copy");
+            helper.remove();
+          }
+
+          copyWritingButton.textContent = "Copied";
+          window.setTimeout(() => {
+            if (!copyWritingButton.hidden) {
+              copyWritingButton.textContent = "Copy";
+            }
+          }, 1400);
+        } catch (error) {
+          copyWritingButton.textContent = "Copy Failed";
+          window.setTimeout(() => {
+            if (!copyWritingButton.hidden) {
+              copyWritingButton.textContent = "Copy";
+            }
+          }, 1600);
+        }
+      });
 
       updateTextCounts();
       resetTimerFromInput();
