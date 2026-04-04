@@ -311,8 +311,7 @@
       background: #020617;
     }
 
-    .audio-placeholder,
-    .recording-placeholder {
+    .audio-placeholder {
       height: 100%;
       min-height: 20rem;
       display: grid;
@@ -324,15 +323,13 @@
         linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 16, 30, 0.9));
     }
 
-    .audio-placeholder h3,
-    .recording-placeholder h3 {
+    .audio-placeholder h3 {
       margin: 0;
       font-size: 1.2rem;
       font-weight: 700;
     }
 
-    .audio-placeholder p,
-    .recording-placeholder p {
+    .audio-placeholder p {
       margin: 0.65rem 0 0;
       max-width: 26rem;
       color: var(--muted);
@@ -585,12 +582,14 @@
       border: 0;
       outline: none;
       resize: vertical;
-      min-height: 18rem;
+      min-height: 28rem;
       background: transparent;
       color: var(--text);
       font: 400 0.98rem/1.7 var(--font-body);
     }
-
+    #plain-text-input {
+      min-height: 40rem;
+    }
     .text-area::placeholder {
       color: #6b7b94;
     }
@@ -720,12 +719,13 @@
       font-weight: 700;
     }
 
-    .countdown-card {
-      display: grid;
-      gap: 0.35rem;
-      margin-bottom: 1rem;
-      padding: 1rem 1.1rem;
-      border-radius: var(--radius-md);
+    .countdown-inline {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.95rem;
+      border-radius: 14px;
       border: 1px solid var(--line);
       background:
         linear-gradient(180deg, rgba(45, 212, 191, 0.08), rgba(8, 15, 30, 0.82)),
@@ -734,21 +734,22 @@
 
     .countdown-label {
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.78rem;
       letter-spacing: 0.02em;
       text-transform: uppercase;
     }
 
     .countdown-time {
       font-family: var(--font-display);
-      font-size: clamp(2.5rem, 2rem + 2vw, 4rem);
+      font-size: clamp(1.15rem, 1rem + 0.9vw, 1.7rem);
       line-height: 1;
       font-variant-numeric: tabular-nums;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
     }
 
     .countdown-note {
       min-height: 1.45rem;
+      margin-bottom: 1rem;
       color: var(--muted);
       font-size: 0.94rem;
     }
@@ -850,7 +851,8 @@
 
       .button,
       .mini-button,
-      .input-shell {
+      .input-shell,
+      .countdown-inline {
         width: 100%;
       }
 

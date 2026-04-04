@@ -315,7 +315,6 @@
       const recordingToggle = document.getElementById("recording-toggle");
       const recordingSeek = document.getElementById("recording-seek");
       const recordingTime = document.getElementById("recording-time");
-      const recordingFileLabel = document.getElementById("recording-file-label");
       const downloadRecording = document.getElementById("download-recording");
       const clearRecording = document.getElementById("clear-recording");
 
@@ -357,7 +356,6 @@
         }
 
         recordingStage.classList.remove("is-visible");
-        recordingFileLabel.textContent = "Review your most recent take, compare it with the prompt, then download it if you want to keep a copy.";
         resetRecordingPlaybackState();
       }
 
@@ -413,7 +411,6 @@
           recordingSeek.disabled = false;
           downloadRecording.disabled = false;
           clearRecording.disabled = false;
-          recordingFileLabel.textContent = "Length: " + formatTime(recordingAudio.duration || 0) + ". Play it back, compare your rhythm and pronunciation, then record again if you want another attempt.";
           updateRecordingProgress();
         });
 
@@ -469,7 +466,7 @@
             const blob = new Blob(recordingChunks, { type: mimeType });
             createRecordingPreview(blob);
             stopRecorderStream();
-            setRecordingStatus("Recording captured. You can play, download, or clear it below.", "success");
+            // setRecordingStatus("Recording captured. You can play, download, or clear it below.", "success");
           });
 
           mediaRecorder.start();
@@ -613,7 +610,6 @@
       const countdownNote = document.getElementById("countdown-note");
       const plainTextInput = document.getElementById("plain-text-input");
       const wordCount = document.getElementById("word-count");
-      const characterCount = document.getElementById("character-count");
 
       let timerId = null;
       let remainingSeconds = Number(timerMinutes.value) * 60;
@@ -625,7 +621,6 @@
         const words = trimmed ? trimmed.split(/\s+/).length : 0;
 
         wordCount.textContent = String(words);
-        characterCount.textContent = String(text.length);
       }
 
       function updateCountdownDisplay() {

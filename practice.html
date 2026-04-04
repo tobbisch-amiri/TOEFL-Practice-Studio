@@ -96,25 +96,6 @@
             </div>
 
             <div class="recording-stage" id="recording-stage">
-              <div class="recording-frame">
-                <div class="recording-placeholder">
-                  <div>
-                    <div class="placeholder-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 10v4"></path>
-                        <path d="M6 6v12"></path>
-                        <path d="M10 3v18"></path>
-                        <path d="M14 8v8"></path>
-                        <path d="M18 5v14"></path>
-                        <path d="M22 10v4"></path>
-                      </svg>
-                    </div>
-                    <h3>Latest Recording Ready</h3>
-                    <p id="recording-file-label">Review your most recent take, compare it with the prompt, then download it if you want to keep a copy.</p>
-                  </div>
-                </div>
-              </div>
-
               <div class="controls-panel">
                 <button class="button button-primary" id="recording-toggle" type="button" disabled>Play</button>
                 <div class="recording-progress">
@@ -138,7 +119,7 @@
             <div class="card-header">
               <div>
                 <h2 class="card-title">Markdown Editor</h2>
-                <p class="card-subtitle">Draft outlines, templates, or reflection notes in Markdown, then switch the same panel into a clean preview when you are ready.</p>
+                <p class="card-subtitle">Paste a real question.</p>
               </div>
               <div class="pill">Edit then preview</div>
             </div>
@@ -182,9 +163,9 @@ Use examples, transitions, and quick structure notes here."></textarea>
             <div class="card-header">
               <div>
                 <h2 class="card-title">Timed Writing Practice</h2>
-                <p class="card-subtitle">Write under pressure with a focused countdown. When the timer ends, the editor locks so you can review what you produced in time.</p>
+                
               </div>
-              <div class="pill">Timer-controlled</div>
+              <div class="pill">Words <strong id="word-count">0</strong></div>
             </div>
 
             <div class="timer-setup">
@@ -194,29 +175,24 @@ Use examples, transitions, and quick structure notes here."></textarea>
               </label>
               <button class="button button-primary" id="start-timer" type="button">Start Timer</button>
               <button class="button button-secondary" id="stop-timer" type="button" hidden>Stop Timer</button>
+              <div class="countdown-inline" aria-live="polite">
+            
+                <div class="countdown-time" id="countdown-time">10:00</div>
+              </div>
             </div>
 
-            <div class="countdown-card">
-              <span class="countdown-label">Countdown</span>
-              <div class="countdown-time" id="countdown-time">10:00</div>
-              <div class="countdown-note" id="countdown-note">Set your time and press start when you are ready.</div>
-            </div>
+      
 
             <section class="editor-shell">
               <div class="shell-header">
-                <strong>Plain Text Response</strong>
-                <span>Timer only affects this area</span>
+                <strong>Write your response</strong>
+                
               </div>
               <label class="visually-hidden" for="plain-text-input">Timed plain text writer</label>
               <textarea class="text-area" id="plain-text-input" spellcheck="true" placeholder="Write your essay here. Aim for clarity, structure, and steady flow while the timer runs."></textarea>
             </section>
 
             <div class="soft-divider"></div>
-
-            <div class="stats-row">
-              <div class="stat-chip">Words <strong id="word-count">0</strong></div>
-              <div class="stat-chip">Characters <strong id="character-count">0</strong></div>
-            </div>
           </article>
         </div>
       </section>
