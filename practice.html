@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEFL Practice Studio</title>
+
+  <!-- Requested CDNs. The app also includes local fallbacks so it remains usable offline. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="navbar" aria-label="Primary">
+      <div class="brand">
+        <h1>TOEFL Practice Studio</h1>
+        <p>Train speaking fluency and writing stamina from one local file.</p>
+      </div>
+
+      <div class="nav-tabs" role="tablist" aria-label="Practice sections">
+        <button class="tab-button is-active" id="tab-speaking" type="button" role="tab" aria-selected="true" aria-controls="panel-speaking" data-target="speaking">
+          Speaking
+        </button>
+        <button class="tab-button" id="tab-writing" type="button" role="tab" aria-selected="false" aria-controls="panel-writing" data-target="writing">
+          Writing
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <section class="panel is-active" id="panel-speaking" role="tabpanel" aria-labelledby="tab-speaking">
+        <div class="split-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Practice Media</h2>
+                <p class="card-subtitle">Drop any audio or video prompt, then control playback with clean custom controls while you shadow or repeat it.</p>
+              </div>
+              <div class="pill">Speaking input</div>
+            </div>
+
+            <div class="drop-zone" id="drop-zone" tabindex="0" aria-label="Drop audio or video file here">
+              <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 16V4"></path>
+                  <path d="M8 8l4-4 4 4"></path>
+                  <path d="M20 16.5a4.5 4.5 0 0 1-1.18 8.84H6.32A4.32 4.32 0 0 1 6 16.7"></path>
+                </svg>
+                <strong>Drop audio or video file here</strong>
+                <span>Drag a file onto this area, or click to browse. The app accepts common audio and video formats and keeps everything in memory only.</span>
+              </div>
+              <input class="hidden-input" id="media-input" type="file" accept="audio/*,video/*">
+            </div>
+
+            <div class="media-stage" id="media-stage">
+              <div class="media-frame" id="media-frame"></div>
+              <div class="controls-panel">
+                <button class="button button-primary" id="media-toggle" type="button" disabled>Play</button>
+                <div class="media-progress">
+                  <label class="visually-hidden" for="media-seek">Seek through media</label>
+                  <input class="slider" id="media-seek" type="range" min="0" max="100" value="0" step="0.1" disabled>
+                </div>
+                <div class="time-label" id="media-time">00:00 / 00:00</div>
+                <button class="mini-button" id="change-media" type="button">Choose Another File</button>
+              </div>
+            </div>
+
+            <div class="status-message" id="media-status" aria-live="polite"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Voice Recorder</h2>
+                <p class="card-subtitle">Record yourself repeating answers or practicing fluency. Start a new take anytime and download it when you want to review later.</p>
+              </div>
+              <div class="pill">One take at a time</div>
+            </div>
+
+            <div class="recording-frame">
+              <div class="recording-shell">
+                <div class="mic-orb" id="mic-orb" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"></path>
+                    <path d="M19 11a7 7 0 0 1-14 0"></path>
+                    <path d="M12 18v4"></path>
+                    <path d="M8 22h8"></path>
+                  </svg>
+                </div>
+
+                <button class="button button-primary" id="record-button" type="button">Start Recording</button>
+                <div class="recording-live" id="recording-live" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div class="recording-stage" id="recording-stage">
+              <div class="recording-frame">
+                <div class="recording-placeholder">
+                  <div>
+                    <div class="placeholder-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 10v4"></path>
+                        <path d="M6 6v12"></path>
+                        <path d="M10 3v18"></path>
+                        <path d="M14 8v8"></path>
+                        <path d="M18 5v14"></path>
+                        <path d="M22 10v4"></path>
+                      </svg>
+                    </div>
+                    <h3>Latest Recording Ready</h3>
+                    <p id="recording-file-label">Review your most recent take, compare it with the prompt, then download it if you want to keep a copy.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="controls-panel">
+                <button class="button button-primary" id="recording-toggle" type="button" disabled>Play</button>
+                <div class="recording-progress">
+                  <label class="visually-hidden" for="recording-seek">Seek through recording</label>
+                  <input class="slider" id="recording-seek" type="range" min="0" max="100" value="0" step="0.1" disabled>
+                </div>
+                <div class="time-label" id="recording-time">00:00 / 00:00</div>
+                <button class="mini-button" id="download-recording" type="button" disabled>Download Recording</button>
+                <button class="mini-button button-danger" id="clear-recording" type="button" disabled>Clear Recording</button>
+              </div>
+            </div>
+
+            <div class="status-message" id="recording-status" aria-live="polite"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-writing" role="tabpanel" aria-labelledby="tab-writing">
+        <div class="split-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Markdown Editor</h2>
+                <p class="card-subtitle">Draft outlines, templates, or reflection notes in Markdown, then switch the same panel into a clean preview when you are ready.</p>
+              </div>
+              <div class="pill">Edit then preview</div>
+            </div>
+
+            <div class="markdown-single" id="markdown-shell">
+              <section class="editor-shell markdown-editor-view" id="markdown-editor-view">
+                <div class="shell-header">
+                  <strong>Markdown Input</strong>
+                  <span>Write first, preview on demand</span>
+                </div>
+                <label class="visually-hidden" for="markdown-input">Markdown editor</label>
+                <textarea class="text-area" id="markdown-input" spellcheck="true" placeholder="# Writing Plan
+
+## Intro
+- State your main idea
+- Give a clear reason
+
+## Body
+Use examples, transitions, and quick structure notes here."></textarea>
+                <div class="markdown-actions">
+                  <button class="button button-primary" id="markdown-preview-button" type="button">OK</button>
+                </div>
+              </section>
+
+              <section class="preview-shell markdown-preview-view" id="markdown-preview-view" hidden>
+                <div class="shell-header">
+                  <strong>Markdown Preview</strong>
+                  <span>Rendered from the same input</span>
+                </div>
+                <div class="preview-body" id="markdown-preview">
+                  <p class="preview-empty">Your rendered Markdown preview will appear here.</p>
+                </div>
+                <div class="markdown-actions">
+                  <button class="button button-secondary" id="markdown-edit-button" type="button">Back to Editing</button>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Timed Writing Practice</h2>
+                <p class="card-subtitle">Write under pressure with a focused countdown. When the timer ends, the editor locks so you can review what you produced in time.</p>
+              </div>
+              <div class="pill">Timer-controlled</div>
+            </div>
+
+            <div class="timer-setup">
+              <label class="input-shell" for="timer-minutes">
+                <span>Minutes</span>
+                <input id="timer-minutes" type="number" min="1" max="180" value="10">
+              </label>
+              <button class="button button-primary" id="start-timer" type="button">Start Timer</button>
+              <button class="button button-secondary" id="stop-timer" type="button" hidden>Stop Timer</button>
+            </div>
+
+            <div class="countdown-card">
+              <span class="countdown-label">Countdown</span>
+              <div class="countdown-time" id="countdown-time">10:00</div>
+              <div class="countdown-note" id="countdown-note">Set your time and press start when you are ready.</div>
+            </div>
+
+            <section class="editor-shell">
+              <div class="shell-header">
+                <strong>Plain Text Response</strong>
+                <span>Timer only affects this area</span>
+              </div>
+              <label class="visually-hidden" for="plain-text-input">Timed plain text writer</label>
+              <textarea class="text-area" id="plain-text-input" spellcheck="true" placeholder="Write your essay here. Aim for clarity, structure, and steady flow while the timer runs."></textarea>
+            </section>
+
+            <div class="soft-divider"></div>
+
+            <div class="stats-row">
+              <div class="stat-chip">Words <strong id="word-count">0</strong></div>
+              <div class="stat-chip">Characters <strong id="character-count">0</strong></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
