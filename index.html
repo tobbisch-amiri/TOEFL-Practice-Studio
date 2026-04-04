@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEFL Practice Studio</title>
+
+  <!-- Requested CDNs. The app also includes local fallbacks so it remains usable offline. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0b1120;
+      --bg-soft: rgba(15, 23, 42, 0.75);
+      --panel: rgba(15, 23, 42, 0.82);
+      --panel-strong: rgba(15, 23, 42, 0.96);
+      --line: rgba(148, 163, 184, 0.18);
+      --line-strong: rgba(148, 163, 184, 0.34);
+      --text: #e5eef9;
+      --muted: #96a4bb;
+      --accent: #2dd4bf;
+      --accent-strong: #14b8a6;
+      --accent-soft: rgba(45, 212, 191, 0.16);
+      --warm: #f59e0b;
+      --danger: #f87171;
+      --danger-soft: rgba(248, 113, 113, 0.16);
+      --shadow: 0 20px 60px rgba(2, 6, 23, 0.38);
+      --radius-lg: 28px;
+      --radius-md: 20px;
+      --radius-sm: 14px;
+      --transition: 220ms ease;
+      --font-display: "Avenir Next", "Segoe UI", "SF Pro Display", "Helvetica Neue", sans-serif;
+      --font-body: "Avenir Next", "Segoe UI", "SF Pro Text", "Helvetica Neue", sans-serif;
+      --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(45, 212, 191, 0.18), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.14), transparent 24%),
+        linear-gradient(180deg, #08101e 0%, #0b1120 46%, #09111b 100%);
+      color: var(--text);
+      font-family: var(--font-body);
+    }
+
+    body {
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 28rem;
+      height: 28rem;
+      border-radius: 999px;
+      filter: blur(80px);
+      opacity: 0.22;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -8rem;
+      right: -8rem;
+      background: #14b8a6;
+    }
+
+    body::after {
+      bottom: -10rem;
+      left: -8rem;
+      background: #f59e0b;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      width: min(1400px, calc(100% - 2rem));
+      margin: 1rem auto;
+      padding: 1.25rem;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius-lg) + 4px);
+      background: rgba(8, 15, 30, 0.74);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 1rem + 1vw, 1.8rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .brand p {
+      margin: 0.28rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .nav-tabs {
+      display: inline-flex;
+      gap: 0.45rem;
+      padding: 0.35rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--line);
+    }
+
+    .tab-button,
+    .button,
+    .mini-button {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      transition: transform var(--transition), background var(--transition), color var(--transition), border-color var(--transition), opacity var(--transition), box-shadow var(--transition);
+    }
+
+    .tab-button {
+      min-width: 7.5rem;
+      padding: 0.85rem 1.2rem;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .tab-button:hover,
+    .button:hover,
+    .mini-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .tab-button.is-active {
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.24), rgba(20, 184, 166, 0.42));
+      color: var(--text);
+      box-shadow: 0 10px 30px rgba(20, 184, 166, 0.16);
+    }
+
+    .main-content {
+      margin-top: 1rem;
+    }
+
+    .panel {
+      display: none;
+      animation: panel-enter 320ms ease;
+    }
+
+    .panel.is-active {
+      display: block;
+    }
+
+    @keyframes panel-enter {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .split-layout {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      min-height: 100%;
+      padding: 1.25rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(10, 16, 30, 0.9), rgba(13, 19, 36, 0.8));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .card-subtitle {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .drop-zone {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 23rem;
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      border: 2px dashed rgba(45, 212, 191, 0.35);
+      background:
+        linear-gradient(180deg, rgba(45, 212, 191, 0.05), rgba(15, 23, 42, 0.12)),
+        rgba(15, 23, 42, 0.5);
+      text-align: center;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
+      cursor: pointer;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.is-dragover {
+      border-color: rgba(45, 212, 191, 0.9);
+      background:
+        linear-gradient(180deg, rgba(45, 212, 191, 0.1), rgba(15, 23, 42, 0.22)),
+        rgba(15, 23, 42, 0.68);
+      box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.26);
+      transform: translateY(-2px);
+    }
+
+    .drop-zone svg,
+    .placeholder-icon svg {
+      width: 4rem;
+      height: 4rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .drop-zone strong {
+      display: block;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .drop-zone span {
+      display: block;
+      margin-top: 0.6rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 28rem;
+    }
+
+    .hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    .media-stage,
+    .recording-stage {
+      display: none;
+      gap: 1rem;
+    }
+
+    .media-stage.is-visible,
+    .recording-stage.is-visible {
+      display: grid;
+    }
+
+    .media-frame,
+    .recording-frame {
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(8, 15, 30, 0.8));
+      min-height: 20rem;
+    }
+
+    .video-wrapper {
+      width: 100%;
+      height: 100%;
+      min-height: 20rem;
+      background: #020617;
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      background: #020617;
+    }
+
+    .audio-placeholder,
+    .recording-placeholder {
+      height: 100%;
+      min-height: 20rem;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      text-align: center;
+      background:
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.16), transparent 30%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 16, 30, 0.9));
+    }
+
+    .audio-placeholder h3,
+    .recording-placeholder h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .audio-placeholder p,
+    .recording-placeholder p {
+      margin: 0.65rem 0 0;
+      max-width: 26rem;
+      color: var(--muted);
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .placeholder-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 6rem;
+      height: 6rem;
+      margin: 0 auto 1rem;
+      border-radius: 28px;
+      background: rgba(45, 212, 191, 0.08);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+    }
+
+    .controls-panel,
+    .recorder-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      background: rgba(8, 15, 30, 0.75);
+      border: 1px solid var(--line);
+    }
+
+    .button,
+    .mini-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      border-radius: 14px;
+      font-weight: 700;
+    }
+
+    .button {
+      padding: 0.9rem 1.15rem;
+    }
+
+    .mini-button {
+      padding: 0.7rem 0.95rem;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #022c22;
+      box-shadow: 0 12px 30px rgba(20, 184, 166, 0.26);
+    }
+
+    .button-secondary {
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .button-danger {
+      background: linear-gradient(135deg, rgba(248, 113, 113, 0.94), rgba(239, 68, 68, 0.9));
+      color: #210909;
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.18);
+    }
+
+    .button[disabled],
+    .mini-button[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .media-progress,
+    .recording-progress,
+    .timer-progress,
+    .plain-progress {
+      flex: 1 1 16rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .slider {
+      width: 100%;
+      height: 0.48rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(45, 212, 191, 0.5), rgba(148, 163, 184, 0.18));
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 1.05rem;
+      height: 1.05rem;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.1);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 1.05rem;
+      height: 1.05rem;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.1);
+    }
+
+    .time-label {
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      font-size: 0.92rem;
+      text-align: right;
+      min-width: 6.25rem;
+    }
+
+    .status-message {
+      min-height: 1.4rem;
+      margin-top: 0.9rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status-message.error {
+      color: #fca5a5;
+    }
+
+    .status-message.success {
+      color: #7dd3fc;
+    }
+
+    .recording-shell {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .mic-orb {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(13rem, 55vw);
+      height: min(13rem, 55vw);
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.18), rgba(15, 23, 42, 0.95) 65%),
+        rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 16px 40px rgba(2, 6, 23, 0.3);
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background var(--transition);
+    }
+
+    .mic-orb svg {
+      width: 4rem;
+      height: 4rem;
+      color: var(--text);
+      transition: color var(--transition);
+    }
+
+    .mic-orb.is-recording {
+      background:
+        radial-gradient(circle at top, rgba(248, 113, 113, 0.36), rgba(15, 23, 42, 0.95) 65%),
+        rgba(15, 23, 42, 0.92);
+      border-color: rgba(248, 113, 113, 0.56);
+      box-shadow: 0 0 0 14px rgba(248, 113, 113, 0.08), 0 18px 45px rgba(239, 68, 68, 0.22);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .mic-orb.is-recording svg {
+      color: #fecaca;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.03);
+      }
+    }
+
+    .recording-live {
+      min-height: 1.75rem;
+      color: var(--muted);
+      font-size: 0.98rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .recording-live.is-active {
+      color: #fca5a5;
+      font-weight: 700;
+    }
+
+    .markdown-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+      min-height: 32rem;
+    }
+
+    .editor-shell,
+    .preview-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 20rem;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: rgba(8, 15, 30, 0.72);
+    }
+
+    .shell-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.82);
+    }
+
+    .shell-header strong {
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+
+    .shell-header span {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .text-area {
+      flex: 1;
+      width: 100%;
+      padding: 1rem 1.05rem 1.25rem;
+      border: 0;
+      outline: none;
+      resize: vertical;
+      min-height: 18rem;
+      background: transparent;
+      color: var(--text);
+      font: 400 0.98rem/1.7 var(--font-body);
+    }
+
+    .text-area::placeholder {
+      color: #6b7b94;
+    }
+
+    .text-area:disabled {
+      color: #7f8ea4;
+      cursor: not-allowed;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .preview-body {
+      flex: 1;
+      padding: 1rem 1.05rem 1.25rem;
+      overflow: auto;
+      color: #d9e6f5;
+      line-height: 1.75;
+    }
+
+    .preview-body > :first-child {
+      margin-top: 0;
+    }
+
+    .preview-body > :last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-body h1,
+    .preview-body h2,
+    .preview-body h3,
+    .preview-body h4 {
+      font-family: var(--font-display);
+      line-height: 1.2;
+      margin: 1.25em 0 0.55em;
+    }
+
+    .preview-body h1 { font-size: 1.8rem; }
+    .preview-body h2 { font-size: 1.45rem; }
+    .preview-body h3 { font-size: 1.2rem; }
+
+    .preview-body p,
+    .preview-body ul,
+    .preview-body ol,
+    .preview-body blockquote {
+      margin: 0.9rem 0;
+    }
+
+    .preview-body ul,
+    .preview-body ol {
+      padding-left: 1.35rem;
+    }
+
+    .preview-body blockquote {
+      padding: 0.15rem 1rem;
+      border-left: 3px solid rgba(45, 212, 191, 0.68);
+      color: #c6d9f1;
+      background: rgba(45, 212, 191, 0.06);
+      border-radius: 0 12px 12px 0;
+    }
+
+    .preview-body code {
+      padding: 0.16rem 0.38rem;
+      border-radius: 8px;
+      background: rgba(30, 41, 59, 0.82);
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      color: #93c5fd;
+    }
+
+    .preview-body pre {
+      overflow: auto;
+      padding: 1rem;
+      border-radius: 16px;
+      background: rgba(8, 15, 30, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .preview-body pre code {
+      padding: 0;
+      background: transparent;
+      color: #cbd5e1;
+    }
+
+    .preview-body a {
+      color: #67e8f9;
+    }
+
+    .preview-empty {
+      color: var(--muted);
+    }
+
+    .timer-setup,
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-shell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.8rem 0.95rem;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(8, 15, 30, 0.72);
+      color: var(--muted);
+    }
+
+    .input-shell input {
+      width: 5rem;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .countdown-card {
+      display: grid;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+      padding: 1rem 1.1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(45, 212, 191, 0.08), rgba(8, 15, 30, 0.82)),
+        rgba(15, 23, 42, 0.72);
+    }
+
+    .countdown-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .countdown-time {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 2rem + 2vw, 4rem);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.04em;
+    }
+
+    .countdown-note {
+      min-height: 1.45rem;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .countdown-note.is-alert {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
+    .countdown-note.is-danger {
+      color: #fca5a5;
+      font-weight: 800;
+    }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.78);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .stat-chip strong {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .soft-divider {
+      height: 1px;
+      width: 100%;
+      margin: 0.85rem 0;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 960px) {
+      .split-layout {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .markdown-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .app-shell {
+        width: min(100% - 1rem, 100%);
+        padding: 0.5rem;
+      }
+
+      .navbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .nav-tabs {
+        width: 100%;
+      }
+
+      .tab-button {
+        flex: 1;
+      }
+
+      .card,
+      .navbar {
+        border-radius: 22px;
+      }
+
+      .card-header {
+        flex-direction: column;
+      }
+
+      .controls-panel,
+      .recorder-actions,
+      .timer-setup,
+      .stats-row {
+        align-items: stretch;
+      }
+
+      .time-label {
+        text-align: left;
+      }
+
+      .button,
+      .mini-button,
+      .input-shell {
+        width: 100%;
+      }
+
+      .input-shell input {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="navbar" aria-label="Primary">
+      <div class="brand">
+        <h1>TOEFL Practice Studio</h1>
+        <p>Train speaking fluency and writing stamina from one local file.</p>
+      </div>
+
+      <div class="nav-tabs" role="tablist" aria-label="Practice sections">
+        <button class="tab-button is-active" id="tab-speaking" type="button" role="tab" aria-selected="true" aria-controls="panel-speaking" data-target="speaking">
+          Speaking
+        </button>
+        <button class="tab-button" id="tab-writing" type="button" role="tab" aria-selected="false" aria-controls="panel-writing" data-target="writing">
+          Writing
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <section class="panel is-active" id="panel-speaking" role="tabpanel" aria-labelledby="tab-speaking">
+        <div class="split-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Practice Media</h2>
+                <p class="card-subtitle">Drop any audio or video prompt, then control playback with clean custom controls while you shadow or repeat it.</p>
+              </div>
+              <div class="pill">Speaking input</div>
+            </div>
+
+            <div class="drop-zone" id="drop-zone" tabindex="0" aria-label="Drop audio or video file here">
+              <div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 16V4"></path>
+                  <path d="M8 8l4-4 4 4"></path>
+                  <path d="M20 16.5a4.5 4.5 0 0 1-1.18 8.84H6.32A4.32 4.32 0 0 1 6 16.7"></path>
+                </svg>
+                <strong>Drop audio or video file here</strong>
+                <span>Drag a file onto this area, or click to browse. The app accepts common audio and video formats and keeps everything in memory only.</span>
+              </div>
+              <input class="hidden-input" id="media-input" type="file" accept="audio/*,video/*">
+            </div>
+
+            <div class="media-stage" id="media-stage">
+              <div class="media-frame" id="media-frame"></div>
+              <div class="controls-panel">
+                <button class="button button-primary" id="media-toggle" type="button" disabled>Play</button>
+                <div class="media-progress">
+                  <label class="visually-hidden" for="media-seek">Seek through media</label>
+                  <input class="slider" id="media-seek" type="range" min="0" max="100" value="0" step="0.1" disabled>
+                </div>
+                <div class="time-label" id="media-time">00:00 / 00:00</div>
+                <button class="mini-button" id="change-media" type="button">Choose Another File</button>
+              </div>
+            </div>
+
+            <div class="status-message" id="media-status" aria-live="polite"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Voice Recorder</h2>
+                <p class="card-subtitle">Record yourself repeating answers or practicing fluency. Start a new take anytime and download it when you want to review later.</p>
+              </div>
+              <div class="pill">One take at a time</div>
+            </div>
+
+            <div class="recording-frame">
+              <div class="recording-shell">
+                <div class="mic-orb" id="mic-orb" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"></path>
+                    <path d="M19 11a7 7 0 0 1-14 0"></path>
+                    <path d="M12 18v4"></path>
+                    <path d="M8 22h8"></path>
+                  </svg>
+                </div>
+
+                <button class="button button-primary" id="record-button" type="button">Start Recording</button>
+                <div class="recording-live" id="recording-live" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div class="recording-stage" id="recording-stage">
+              <div class="recording-frame">
+                <div class="recording-placeholder">
+                  <div>
+                    <div class="placeholder-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 10v4"></path>
+                        <path d="M6 6v12"></path>
+                        <path d="M10 3v18"></path>
+                        <path d="M14 8v8"></path>
+                        <path d="M18 5v14"></path>
+                        <path d="M22 10v4"></path>
+                      </svg>
+                    </div>
+                    <h3>Latest Recording Ready</h3>
+                    <p id="recording-file-label">Review your most recent take, compare it with the prompt, then download it if you want to keep a copy.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="controls-panel">
+                <button class="button button-primary" id="recording-toggle" type="button" disabled>Play</button>
+                <div class="recording-progress">
+                  <label class="visually-hidden" for="recording-seek">Seek through recording</label>
+                  <input class="slider" id="recording-seek" type="range" min="0" max="100" value="0" step="0.1" disabled>
+                </div>
+                <div class="time-label" id="recording-time">00:00 / 00:00</div>
+                <button class="mini-button" id="download-recording" type="button" disabled>Download Recording</button>
+                <button class="mini-button button-danger" id="clear-recording" type="button" disabled>Clear Recording</button>
+              </div>
+            </div>
+
+            <div class="status-message" id="recording-status" aria-live="polite"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-writing" role="tabpanel" aria-labelledby="tab-writing">
+        <div class="split-layout">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Markdown Editor</h2>
+                <p class="card-subtitle">Draft outlines, templates, or reflection notes in Markdown and see a live formatted preview as you type.</p>
+              </div>
+              <div class="pill">Live preview</div>
+            </div>
+
+            <div class="markdown-grid">
+              <section class="editor-shell">
+                <div class="shell-header">
+                  <strong>Editor</strong>
+                  <span>Markdown supported</span>
+                </div>
+                <label class="visually-hidden" for="markdown-input">Markdown editor</label>
+                <textarea class="text-area" id="markdown-input" spellcheck="true" placeholder="# Writing Plan
+
+## Intro
+- State your main idea
+- Give a clear reason
+
+## Body
+Use examples, transitions, and quick structure notes here."></textarea>
+              </section>
+
+              <section class="preview-shell">
+                <div class="shell-header">
+                  <strong>Preview</strong>
+                  <span>Updates instantly</span>
+                </div>
+                <div class="preview-body" id="markdown-preview">
+                  <p class="preview-empty">Your rendered Markdown preview will appear here.</p>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Timed Writing Practice</h2>
+                <p class="card-subtitle">Write under pressure with a focused countdown. When the timer ends, the editor locks so you can review what you produced in time.</p>
+              </div>
+              <div class="pill">Timer-controlled</div>
+            </div>
+
+            <div class="timer-setup">
+              <label class="input-shell" for="timer-minutes">
+                <span>Minutes</span>
+                <input id="timer-minutes" type="number" min="1" max="180" value="10">
+              </label>
+              <button class="button button-primary" id="start-timer" type="button">Start Timer</button>
+              <button class="button button-secondary" id="stop-timer" type="button" hidden>Stop Timer</button>
+            </div>
+
+            <div class="countdown-card">
+              <span class="countdown-label">Countdown</span>
+              <div class="countdown-time" id="countdown-time">10:00</div>
+              <div class="countdown-note" id="countdown-note">Set your time and press start when you are ready.</div>
+            </div>
+
+            <section class="editor-shell">
+              <div class="shell-header">
+                <strong>Plain Text Response</strong>
+                <span>Timer only affects this area</span>
+              </div>
+              <label class="visually-hidden" for="plain-text-input">Timed plain text writer</label>
+              <textarea class="text-area" id="plain-text-input" spellcheck="true" placeholder="Write your essay here. Aim for clarity, structure, and steady flow while the timer runs."></textarea>
+            </section>
+
+            <div class="soft-divider"></div>
+
+            <div class="stats-row">
+              <div class="stat-chip">Words <strong id="word-count">0</strong></div>
+              <div class="stat-chip">Characters <strong id="character-count">0</strong></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Small helper for consistent time displays across media and timers.
+    function formatTime(totalSeconds) {
+      if (!Number.isFinite(totalSeconds) || totalSeconds < 0) {
+        return "00:00";
+      }
+
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.floor(totalSeconds % 60);
+      return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+    }
+
+    // Escape HTML before using the local Markdown fallback.
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // Lightweight offline Markdown fallback in case the CDN version of marked.js is unavailable.
+    function fallbackMarkdown(markdown) {
+      const escaped = escapeHtml(markdown).replace(/\r\n?/g, "\n");
+      const blocks = escaped.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+
+      function formatInline(text) {
+        return text
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      }
+
+      return blocks.map((block) => {
+        if (/^###\s+/.test(block)) {
+          return "<h3>" + formatInline(block.replace(/^###\s+/, "")) + "</h3>";
+        }
+
+        if (/^##\s+/.test(block)) {
+          return "<h2>" + formatInline(block.replace(/^##\s+/, "")) + "</h2>";
+        }
+
+        if (/^#\s+/.test(block)) {
+          return "<h1>" + formatInline(block.replace(/^#\s+/, "")) + "</h1>";
+        }
+
+        if (/^>\s+/m.test(block)) {
+          const quote = block.split("\n").map((line) => line.replace(/^>\s?/, "")).join("<br>");
+          return "<blockquote>" + formatInline(quote) + "</blockquote>";
+        }
+
+        if (/^(-|\*)\s+/m.test(block)) {
+          const items = block.split("\n").map((line) => line.replace(/^(-|\*)\s+/, "").trim()).filter(Boolean);
+          return "<ul>" + items.map((item) => "<li>" + formatInline(item) + "</li>").join("") + "</ul>";
+        }
+
+        if (/^\d+\.\s+/m.test(block)) {
+          const items = block.split("\n").map((line) => line.replace(/^\d+\.\s+/, "").trim()).filter(Boolean);
+          return "<ol>" + items.map((item) => "<li>" + formatInline(item) + "</li>").join("") + "</ol>";
+        }
+
+        if (/^```/.test(block) && /```$/.test(block)) {
+          const code = block.replace(/^```[\w-]*\n?/, "").replace(/\n?```$/, "");
+          return "<pre><code>" + code + "</code></pre>";
+        }
+
+        return "<p>" + formatInline(block.replace(/\n/g, "<br>")) + "</p>";
+      }).join("\n");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".tab-button");
+      const panels = document.querySelectorAll(".panel");
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.dataset.target;
+
+          tabs.forEach((button) => {
+            const isActive = button === tab;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-selected", String(isActive));
+          });
+
+          panels.forEach((panel) => {
+            panel.classList.toggle("is-active", panel.id === "panel-" + target);
+          });
+        });
+      });
+
+      // ---------- Speaking: media player ----------
+      const dropZone = document.getElementById("drop-zone");
+      const mediaInput = document.getElementById("media-input");
+      const mediaStage = document.getElementById("media-stage");
+      const mediaFrame = document.getElementById("media-frame");
+      const mediaStatus = document.getElementById("media-status");
+      const mediaToggle = document.getElementById("media-toggle");
+      const mediaSeek = document.getElementById("media-seek");
+      const mediaTime = document.getElementById("media-time");
+      const changeMedia = document.getElementById("change-media");
+
+      let mediaElement = null;
+      let mediaObjectUrl = null;
+
+      function setMediaStatus(message, tone) {
+        mediaStatus.textContent = message || "";
+        mediaStatus.className = "status-message" + (tone ? " " + tone : "");
+      }
+
+      function clearCurrentMedia() {
+        if (mediaElement) {
+          mediaElement.pause();
+          mediaElement.removeAttribute("src");
+          mediaElement.load();
+          mediaElement.remove();
+          mediaElement = null;
+        }
+
+        if (mediaObjectUrl) {
+          URL.revokeObjectURL(mediaObjectUrl);
+          mediaObjectUrl = null;
+        }
+
+        mediaToggle.textContent = "Play";
+        mediaToggle.disabled = true;
+        mediaSeek.value = 0;
+        mediaSeek.disabled = true;
+        mediaTime.textContent = "00:00 / 00:00";
+      }
+
+      function updateMediaProgress() {
+        if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
+          mediaSeek.value = 0;
+          mediaTime.textContent = "00:00 / 00:00";
+          return;
+        }
+
+        const percentage = (mediaElement.currentTime / mediaElement.duration) * 100;
+        mediaSeek.value = percentage || 0;
+        mediaTime.textContent = formatTime(mediaElement.currentTime) + " / " + formatTime(mediaElement.duration);
+        mediaToggle.textContent = mediaElement.paused ? "Play" : "Pause";
+      }
+
+      function detectMediaKind(file) {
+        const lowerName = file.name.toLowerCase();
+
+        if (file.type.startsWith("video/")) {
+          return "video";
+        }
+
+        if (file.type.startsWith("audio/")) {
+          return "audio";
+        }
+
+        if (/\.(mp4|mov|webm|m4v|ogv|avi|mkv)$/i.test(lowerName)) {
+          return "video";
+        }
+
+        if (/\.(mp3|wav|m4a|aac|ogg|opus|flac|webm)$/i.test(lowerName)) {
+          return "audio";
+        }
+
+        return null;
+      }
+
+      function buildMediaCard(file) {
+        const mediaKind = detectMediaKind(file);
+
+        if (!mediaKind) {
+          setMediaStatus("Please choose a valid audio or video file.", "error");
+          return;
+        }
+
+        clearCurrentMedia();
+        mediaFrame.innerHTML = "";
+        mediaObjectUrl = URL.createObjectURL(file);
+        const isVideo = mediaKind === "video";
+
+        if (isVideo) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "video-wrapper";
+
+          mediaElement = document.createElement("video");
+          mediaElement.src = mediaObjectUrl;
+          mediaElement.preload = "metadata";
+          mediaElement.playsInline = true;
+          mediaElement.controls = false;
+
+          wrapper.appendChild(mediaElement);
+          mediaFrame.appendChild(wrapper);
+        } else {
+          const placeholder = document.createElement("div");
+          placeholder.className = "audio-placeholder";
+          placeholder.innerHTML = `
+            <div>
+              <div class="placeholder-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+              </div>
+              <h3>${escapeHtml(file.name)}</h3>
+              <p>Audio prompt loaded. Use the custom controls below to listen, pause, and scrub precisely while you practice repeating naturally.</p>
+            </div>
+          `;
+
+          mediaElement = document.createElement("audio");
+          mediaElement.src = mediaObjectUrl;
+          mediaElement.preload = "metadata";
+          mediaElement.controls = false;
+          mediaElement.className = "visually-hidden";
+
+          placeholder.appendChild(mediaElement);
+          mediaFrame.appendChild(placeholder);
+        }
+
+        mediaElement.addEventListener("loadedmetadata", () => {
+          mediaToggle.disabled = false;
+          mediaSeek.disabled = false;
+          updateMediaProgress();
+        });
+
+        mediaElement.addEventListener("timeupdate", updateMediaProgress);
+        mediaElement.addEventListener("play", updateMediaProgress);
+        mediaElement.addEventListener("pause", updateMediaProgress);
+        mediaElement.addEventListener("ended", () => {
+          mediaElement.currentTime = 0;
+          updateMediaProgress();
+        });
+
+        mediaElement.addEventListener("error", () => {
+          setMediaStatus("This file could not be played in your browser.", "error");
+        });
+
+        dropZone.style.display = "none";
+        mediaStage.classList.add("is-visible");
+        setMediaStatus(isVideo ? "Video loaded. Press play when you are ready." : "Audio loaded. Press play when you are ready.", "success");
+      }
+
+      function handleMediaFiles(files) {
+        const file = files && files[0];
+        if (!file) {
+          return;
+        }
+
+        buildMediaCard(file);
+      }
+
+      dropZone.addEventListener("click", () => mediaInput.click());
+      changeMedia.addEventListener("click", () => mediaInput.click());
+
+      dropZone.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          mediaInput.click();
+        }
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.add("is-dragover");
+        });
+      });
+
+      ["dragleave", "dragend", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.remove("is-dragover");
+        });
+      });
+
+      dropZone.addEventListener("drop", (event) => {
+        handleMediaFiles(event.dataTransfer.files);
+      });
+
+      mediaInput.addEventListener("change", () => {
+        handleMediaFiles(mediaInput.files);
+        mediaInput.value = "";
+      });
+
+      mediaToggle.addEventListener("click", async () => {
+        if (!mediaElement) {
+          return;
+        }
+
+        try {
+          if (mediaElement.paused) {
+            await mediaElement.play();
+          } else {
+            mediaElement.pause();
+          }
+        } catch (error) {
+          setMediaStatus("Playback could not start. Try pressing play again.", "error");
+        }
+      });
+
+      mediaSeek.addEventListener("input", () => {
+        if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
+          return;
+        }
+
+        mediaElement.currentTime = (Number(mediaSeek.value) / 100) * mediaElement.duration;
+        updateMediaProgress();
+      });
+
+      // ---------- Speaking: recorder ----------
+      const micOrb = document.getElementById("mic-orb");
+      const recordButton = document.getElementById("record-button");
+      const recordingLive = document.getElementById("recording-live");
+      const recordingStage = document.getElementById("recording-stage");
+      const recordingStatus = document.getElementById("recording-status");
+      const recordingToggle = document.getElementById("recording-toggle");
+      const recordingSeek = document.getElementById("recording-seek");
+      const recordingTime = document.getElementById("recording-time");
+      const recordingFileLabel = document.getElementById("recording-file-label");
+      const downloadRecording = document.getElementById("download-recording");
+      const clearRecording = document.getElementById("clear-recording");
+
+      let mediaRecorder = null;
+      let recorderStream = null;
+      let recordingChunks = [];
+      let isRecording = false;
+      let recordingElapsedSeconds = 0;
+      let recordingTimerId = null;
+      let recordingBlobUrl = null;
+      let recordingAudio = null;
+
+      function setRecordingStatus(message, tone) {
+        recordingStatus.textContent = message || "";
+        recordingStatus.className = "status-message" + (tone ? " " + tone : "");
+      }
+
+      function resetRecordingPlaybackState() {
+        recordingToggle.textContent = "Play";
+        recordingSeek.value = 0;
+        recordingSeek.disabled = true;
+        recordingToggle.disabled = true;
+        downloadRecording.disabled = true;
+        clearRecording.disabled = true;
+        recordingTime.textContent = "00:00 / 00:00";
+      }
+
+      function clearRecordingAudio() {
+        if (recordingAudio) {
+          recordingAudio.pause();
+          recordingAudio.removeAttribute("src");
+          recordingAudio.load();
+          recordingAudio = null;
+        }
+
+        if (recordingBlobUrl) {
+          URL.revokeObjectURL(recordingBlobUrl);
+          recordingBlobUrl = null;
+        }
+
+        recordingStage.classList.remove("is-visible");
+        recordingFileLabel.textContent = "Review your most recent take, compare it with the prompt, then download it if you want to keep a copy.";
+        resetRecordingPlaybackState();
+      }
+
+      function stopRecorderStream() {
+        if (recorderStream) {
+          recorderStream.getTracks().forEach((track) => track.stop());
+          recorderStream = null;
+        }
+      }
+
+      function updateRecordingLive() {
+        if (!isRecording) {
+          recordingLive.textContent = "";
+          recordingLive.classList.remove("is-active");
+          return;
+        }
+
+        recordingLive.textContent = "Recording... " + formatTime(recordingElapsedSeconds);
+        recordingLive.classList.add("is-active");
+      }
+
+      function setRecordingUI(recordingState) {
+        isRecording = recordingState;
+        micOrb.classList.toggle("is-recording", recordingState);
+        recordButton.textContent = recordingState ? "Stop Recording" : "Start Recording";
+        recordButton.classList.toggle("button-danger", recordingState);
+        recordButton.classList.toggle("button-primary", !recordingState);
+        updateRecordingLive();
+      }
+
+      function updateRecordingProgress() {
+        if (!recordingAudio || !Number.isFinite(recordingAudio.duration)) {
+          recordingSeek.value = 0;
+          recordingTime.textContent = "00:00 / 00:00";
+          return;
+        }
+
+        recordingSeek.value = (recordingAudio.currentTime / recordingAudio.duration) * 100 || 0;
+        recordingTime.textContent = formatTime(recordingAudio.currentTime) + " / " + formatTime(recordingAudio.duration);
+        recordingToggle.textContent = recordingAudio.paused ? "Play" : "Pause";
+      }
+
+      function createRecordingPreview(blob) {
+        clearRecordingAudio();
+
+        recordingBlobUrl = URL.createObjectURL(blob);
+        recordingAudio = new Audio(recordingBlobUrl);
+        recordingAudio.preload = "metadata";
+
+        recordingAudio.addEventListener("loadedmetadata", () => {
+          recordingStage.classList.add("is-visible");
+          recordingToggle.disabled = false;
+          recordingSeek.disabled = false;
+          downloadRecording.disabled = false;
+          clearRecording.disabled = false;
+          recordingFileLabel.textContent = "Length: " + formatTime(recordingAudio.duration || 0) + ". Play it back, compare your rhythm and pronunciation, then record again if you want another attempt.";
+          updateRecordingProgress();
+        });
+
+        recordingAudio.addEventListener("timeupdate", updateRecordingProgress);
+        recordingAudio.addEventListener("play", updateRecordingProgress);
+        recordingAudio.addEventListener("pause", updateRecordingProgress);
+        recordingAudio.addEventListener("ended", () => {
+          recordingAudio.currentTime = 0;
+          updateRecordingProgress();
+        });
+
+        recordingAudio.addEventListener("error", () => {
+          setRecordingStatus("Your recording was created, but playback failed in this browser.", "error");
+        });
+      }
+
+      async function startRecording() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setRecordingStatus("This browser does not support microphone recording.", "error");
+          return;
+        }
+
+        if (typeof window.MediaRecorder === "undefined") {
+          setRecordingStatus("This browser supports microphone access, but not the MediaRecorder API.", "error");
+          return;
+        }
+
+        setRecordingStatus("", "");
+
+        try {
+          recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          clearRecordingAudio();
+          recordingChunks = [];
+          recordingElapsedSeconds = 0;
+          updateRecordingLive();
+
+          const preferredMimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : "";
+
+          mediaRecorder = preferredMimeType
+            ? new MediaRecorder(recorderStream, { mimeType: preferredMimeType })
+            : new MediaRecorder(recorderStream);
+
+          mediaRecorder.addEventListener("dataavailable", (event) => {
+            if (event.data.size > 0) {
+              recordingChunks.push(event.data);
+            }
+          });
+
+          mediaRecorder.addEventListener("stop", () => {
+            const mimeType = mediaRecorder.mimeType || "audio/webm";
+            const blob = new Blob(recordingChunks, { type: mimeType });
+            createRecordingPreview(blob);
+            stopRecorderStream();
+            setRecordingStatus("Recording captured. You can play, download, or clear it below.", "success");
+          });
+
+          mediaRecorder.start();
+          recordingTimerId = window.setInterval(() => {
+            recordingElapsedSeconds += 1;
+            updateRecordingLive();
+          }, 1000);
+          setRecordingUI(true);
+        } catch (error) {
+          stopRecorderStream();
+          const permissionMessage = error && error.name === "NotAllowedError"
+            ? "Microphone permission was denied. Allow access and try again."
+            : "Could not start recording. Please check your microphone and browser permissions.";
+          setRecordingStatus(permissionMessage, "error");
+          setRecordingUI(false);
+        }
+      }
+
+      function stopRecording() {
+        if (recordingTimerId) {
+          window.clearInterval(recordingTimerId);
+          recordingTimerId = null;
+        }
+
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        } else {
+          stopRecorderStream();
+        }
+
+        setRecordingUI(false);
+      }
+
+      recordButton.addEventListener("click", () => {
+        if (isRecording) {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      });
+
+      recordingToggle.addEventListener("click", async () => {
+        if (!recordingAudio) {
+          return;
+        }
+
+        try {
+          if (recordingAudio.paused) {
+            await recordingAudio.play();
+          } else {
+            recordingAudio.pause();
+          }
+        } catch (error) {
+          setRecordingStatus("Playback could not start. Try again.", "error");
+        }
+      });
+
+      recordingSeek.addEventListener("input", () => {
+        if (!recordingAudio || !Number.isFinite(recordingAudio.duration)) {
+          return;
+        }
+
+        recordingAudio.currentTime = (Number(recordingSeek.value) / 100) * recordingAudio.duration;
+        updateRecordingProgress();
+      });
+
+      downloadRecording.addEventListener("click", () => {
+        if (!recordingBlobUrl) {
+          return;
+        }
+
+        const anchor = document.createElement("a");
+        anchor.href = recordingBlobUrl;
+        anchor.download = "toefl-speaking-practice.webm";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      });
+
+      clearRecording.addEventListener("click", () => {
+        clearRecordingAudio();
+        setRecordingStatus("Recording cleared. Start a new one whenever you are ready.", "success");
+      });
+
+      resetRecordingPlaybackState();
+      setRecordingUI(false);
+
+      // ---------- Writing: markdown ----------
+      const markdownInput = document.getElementById("markdown-input");
+      const markdownPreview = document.getElementById("markdown-preview");
+
+      function renderMarkdown(markdown) {
+        if (!markdown.trim()) {
+          markdownPreview.innerHTML = '<p class="preview-empty">Your rendered Markdown preview will appear here.</p>';
+          return;
+        }
+
+        if (window.marked && typeof window.marked.parse === "function") {
+          markdownPreview.innerHTML = window.marked.parse(markdown, {
+            breaks: true,
+            gfm: true
+          });
+        } else {
+          markdownPreview.innerHTML = fallbackMarkdown(markdown);
+        }
+      }
+
+      markdownInput.addEventListener("input", () => {
+        renderMarkdown(markdownInput.value);
+      });
+
+      renderMarkdown(markdownInput.value);
+
+      // ---------- Writing: timed plain text ----------
+      const timerMinutes = document.getElementById("timer-minutes");
+      const startTimerButton = document.getElementById("start-timer");
+      const stopTimerButton = document.getElementById("stop-timer");
+      const countdownTime = document.getElementById("countdown-time");
+      const countdownNote = document.getElementById("countdown-note");
+      const plainTextInput = document.getElementById("plain-text-input");
+      const wordCount = document.getElementById("word-count");
+      const characterCount = document.getElementById("character-count");
+
+      let timerId = null;
+      let remainingSeconds = Number(timerMinutes.value) * 60;
+      let timerRunning = false;
+
+      function updateTextCounts() {
+        const text = plainTextInput.value;
+        const trimmed = text.trim();
+        const words = trimmed ? trimmed.split(/\s+/).length : 0;
+
+        wordCount.textContent = String(words);
+        characterCount.textContent = String(text.length);
+      }
+
+      function updateCountdownDisplay() {
+        countdownTime.textContent = formatTime(remainingSeconds);
+
+        if (!timerRunning) {
+          countdownNote.className = "countdown-note";
+          if (plainTextInput.disabled) {
+            countdownNote.textContent = "Time's up!";
+            countdownNote.classList.add("is-danger");
+          } else {
+            countdownNote.textContent = "Set your time and press start when you are ready.";
+          }
+          return;
+        }
+
+        if (remainingSeconds <= 60) {
+          countdownNote.textContent = "Final minute. Keep your conclusion clear and concise.";
+          countdownNote.className = "countdown-note is-alert";
+        } else {
+          countdownNote.textContent = "Timer is running. Focus on flow, structure, and finishing within the limit.";
+          countdownNote.className = "countdown-note";
+        }
+      }
+
+      function syncTimerControls() {
+        startTimerButton.hidden = timerRunning;
+        stopTimerButton.hidden = !timerRunning;
+        startTimerButton.disabled = timerRunning;
+        timerMinutes.disabled = timerRunning;
+      }
+
+      function resetTimerFromInput() {
+        const minutes = Math.max(1, Number(timerMinutes.value) || 10);
+        timerMinutes.value = String(minutes);
+        remainingSeconds = minutes * 60;
+        plainTextInput.disabled = false;
+        timerRunning = false;
+        if (timerId) {
+          window.clearInterval(timerId);
+          timerId = null;
+        }
+        syncTimerControls();
+        updateCountdownDisplay();
+      }
+
+      function finishTimer() {
+        if (timerId) {
+          window.clearInterval(timerId);
+          timerId = null;
+        }
+
+        timerRunning = false;
+        remainingSeconds = 0;
+        plainTextInput.disabled = true;
+        syncTimerControls();
+        countdownNote.textContent = "Time's up!";
+        countdownNote.className = "countdown-note is-danger";
+        updateCountdownDisplay();
+      }
+
+      function startTimer() {
+        const minutes = Number(timerMinutes.value);
+
+        if (!Number.isFinite(minutes) || minutes <= 0) {
+          countdownNote.textContent = "Please enter a valid number of minutes.";
+          countdownNote.className = "countdown-note is-danger";
+          return;
+        }
+
+        remainingSeconds = Math.round(minutes * 60);
+        plainTextInput.disabled = false;
+        timerRunning = true;
+        syncTimerControls();
+        updateCountdownDisplay();
+
+        timerId = window.setInterval(() => {
+          remainingSeconds -= 1;
+
+          if (remainingSeconds <= 0) {
+            finishTimer();
+            return;
+          }
+
+          updateCountdownDisplay();
+        }, 1000);
+      }
+
+      startTimerButton.addEventListener("click", startTimer);
+
+      stopTimerButton.addEventListener("click", () => {
+        resetTimerFromInput();
+        countdownNote.textContent = "Timer stopped early. You can adjust the minutes and start again.";
+      });
+
+      timerMinutes.addEventListener("input", resetTimerFromInput);
+      plainTextInput.addEventListener("input", updateTextCounts);
+
+      updateTextCounts();
+      resetTimerFromInput();
+
+      // Cleanup object URLs and media streams if the page closes or reloads.
+      window.addEventListener("beforeunload", () => {
+        clearCurrentMedia();
+        clearRecordingAudio();
+        stopRecorderStream();
+      });
+    });
+  </script>
+</body>
+</html>
