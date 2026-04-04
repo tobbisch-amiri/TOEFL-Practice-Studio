@@ -96,12 +96,24 @@
       const mediaFrame = document.getElementById("media-frame");
       const mediaStatus = document.getElementById("media-status");
       const mediaToggle = document.getElementById("media-toggle");
+      const mediaBackward = document.getElementById("media-backward");
+      const mediaForward = document.getElementById("media-forward");
+      const mediaRepeat = document.getElementById("media-repeat");
       const mediaSeek = document.getElementById("media-seek");
       const mediaTime = document.getElementById("media-time");
       const changeMedia = document.getElementById("change-media");
 
       let mediaElement = null;
       let mediaObjectUrl = null;
+      let mediaSegmentStart = 0;
+      let repeatStartTime = null;
+      let repeatEndTime = null;
+      let repeatStopTime = null;
+      let isRepeatPlayback = false;
+
+      const MEDIA_SKIP_SECONDS = 10;
+      const MIN_REPEAT_SECONDS = 0.25;
+      const REPEAT_STOP_BUFFER = 0.05;
 
       function setMediaStatus(message, tone) {
         mediaStatus.textContent = message || "";
@@ -124,15 +136,96 @@
 
         mediaToggle.textContent = "Play";
         mediaToggle.disabled = true;
+        mediaBackward.disabled = true;
+        mediaForward.disabled = true;
+        mediaRepeat.disabled = true;
         mediaSeek.value = 0;
         mediaSeek.disabled = true;
         mediaTime.textContent = "00:00 / 00:00";
+        mediaSegmentStart = 0;
+        repeatStartTime = null;
+        repeatEndTime = null;
+        repeatStopTime = null;
+        isRepeatPlayback = false;
+      }
+
+      function hasRepeatSegment() {
+        return Number.isFinite(repeatStartTime)
+          && Number.isFinite(repeatEndTime)
+          && repeatEndTime - repeatStartTime >= MIN_REPEAT_SECONDS;
+      }
+
+      function updateRepeatButton() {
+        mediaRepeat.disabled = !mediaElement || !hasRepeatSegment() || !mediaElement.paused;
+      }
+
+      function clampMediaTime(targetTime) {
+        if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
+          return 0;
+        }
+
+        return Math.min(Math.max(targetTime, 0), mediaElement.duration);
+      }
+
+      function moveMediaPlayhead(targetTime, userInitiated, preserveRepeatState) {
+        if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
+          return;
+        }
+
+        const nextTime = clampMediaTime(targetTime);
+        const wasPaused = mediaElement.paused;
+
+        if (!preserveRepeatState) {
+          isRepeatPlayback = false;
+          repeatStopTime = null;
+        }
+
+        mediaElement.currentTime = nextTime;
+
+        if (!wasPaused && userInitiated) {
+          mediaSegmentStart = nextTime;
+        }
+
+        updateMediaProgress();
+      }
+
+      function captureRepeatSegment() {
+        if (!mediaElement) {
+          return;
+        }
+
+        const currentTime = clampMediaTime(mediaElement.currentTime);
+        const segmentLength = currentTime - mediaSegmentStart;
+
+        if (segmentLength >= MIN_REPEAT_SECONDS) {
+          repeatStartTime = mediaSegmentStart;
+          repeatEndTime = currentTime;
+          setMediaStatus("Repeat is ready for " + formatTime(repeatStartTime) + " to " + formatTime(repeatEndTime) + ".", "success");
+        }
+      }
+
+      function stopRepeatPlaybackAtBoundary() {
+        if (!mediaElement || !isRepeatPlayback || !Number.isFinite(repeatStopTime)) {
+          return false;
+        }
+
+        if (mediaElement.currentTime < repeatStopTime - REPEAT_STOP_BUFFER) {
+          return false;
+        }
+
+        mediaElement.pause();
+        mediaElement.currentTime = repeatStopTime;
+        isRepeatPlayback = false;
+        repeatStopTime = null;
+        updateMediaProgress();
+        return true;
       }
 
       function updateMediaProgress() {
         if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
           mediaSeek.value = 0;
           mediaTime.textContent = "00:00 / 00:00";
+          updateRepeatButton();
           return;
         }
 
@@ -140,6 +233,7 @@
         mediaSeek.value = percentage || 0;
         mediaTime.textContent = formatTime(mediaElement.currentTime) + " / " + formatTime(mediaElement.duration);
         mediaToggle.textContent = mediaElement.paused ? "Play" : "Pause";
+        updateRepeatButton();
       }
 
       function detectMediaKind(file) {
@@ -218,15 +312,35 @@
 
         mediaElement.addEventListener("loadedmetadata", () => {
           mediaToggle.disabled = false;
+          mediaBackward.disabled = false;
+          mediaForward.disabled = false;
           mediaSeek.disabled = false;
           updateMediaProgress();
         });
 
-        mediaElement.addEventListener("timeupdate", updateMediaProgress);
-        mediaElement.addEventListener("play", updateMediaProgress);
-        mediaElement.addEventListener("pause", updateMediaProgress);
+        mediaElement.addEventListener("timeupdate", () => {
+          if (stopRepeatPlaybackAtBoundary()) {
+            return;
+          }
+
+          updateMediaProgress();
+        });
+        mediaElement.addEventListener("play", () => {
+          if (!isRepeatPlayback) {
+            mediaSegmentStart = mediaElement.currentTime;
+          }
+
+          updateMediaProgress();
+        });
+        mediaElement.addEventListener("pause", () => {
+          captureRepeatSegment();
+          updateMediaProgress();
+        });
         mediaElement.addEventListener("ended", () => {
-          mediaElement.currentTime = 0;
+          captureRepeatSegment();
+          isRepeatPlayback = false;
+          repeatStopTime = null;
+          mediaElement.currentTime = Number.isFinite(mediaElement.duration) ? mediaElement.duration : mediaElement.currentTime;
           updateMediaProgress();
         });
 
@@ -288,6 +402,12 @@
 
         try {
           if (mediaElement.paused) {
+            if (Number.isFinite(mediaElement.duration) && mediaElement.currentTime >= mediaElement.duration - REPEAT_STOP_BUFFER) {
+              moveMediaPlayhead(0, false, false);
+            }
+
+            isRepeatPlayback = false;
+            repeatStopTime = null;
             await mediaElement.play();
           } else {
             mediaElement.pause();
@@ -297,13 +417,39 @@
         }
       });
 
+      mediaBackward.addEventListener("click", () => {
+        moveMediaPlayhead((mediaElement ? mediaElement.currentTime : 0) - MEDIA_SKIP_SECONDS, true, false);
+      });
+
+      mediaForward.addEventListener("click", () => {
+        moveMediaPlayhead((mediaElement ? mediaElement.currentTime : 0) + MEDIA_SKIP_SECONDS, true, false);
+      });
+
+      mediaRepeat.addEventListener("click", async () => {
+        if (!mediaElement || !hasRepeatSegment()) {
+          return;
+        }
+
+        mediaSegmentStart = repeatStartTime;
+        isRepeatPlayback = true;
+        repeatStopTime = repeatEndTime;
+        moveMediaPlayhead(repeatStartTime, false, true);
+
+        try {
+          await mediaElement.play();
+        } catch (error) {
+          isRepeatPlayback = false;
+          repeatStopTime = null;
+          setMediaStatus("Repeat could not start. Try pressing repeat again.", "error");
+        }
+      });
+
       mediaSeek.addEventListener("input", () => {
         if (!mediaElement || !Number.isFinite(mediaElement.duration)) {
           return;
         }
 
-        mediaElement.currentTime = (Number(mediaSeek.value) / 100) * mediaElement.duration;
-        updateMediaProgress();
+        moveMediaPlayhead((Number(mediaSeek.value) / 100) * mediaElement.duration, true, false);
       });
 
       // ---------- Speaking: recorder ----------

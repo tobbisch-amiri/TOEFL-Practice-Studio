@@ -22,7 +22,8 @@ You do not need to run any terminal command or local server.
 ### Speaking Practice
 
 - Drag and drop any audio or video file
-- Custom media controls for play, pause, seeking, and time display
+- Custom media controls for play, pause, seeking, time display, and `10s` jumps
+- A `Repeat` control that replays the exact segment between your last play point and your latest pause point
 - Microphone recording using your browser microphone
 - Playback for your recorded response
 - Download and clear controls for your latest recording
@@ -43,13 +44,16 @@ You do not need to run any terminal command or local server.
 
 1. Open the `Speaking` tab.
 2. Drop an audio or video file into the media area, or click to choose a file.
-3. Use the custom controls to play or pause the prompt and move through it.
-4. Click `Start Recording` to record your response.
-5. Allow microphone access when your browser asks.
-6. Click `Stop Recording` when you finish.
-7. Use the playback controls to listen to your recording.
-8. Use `Download Recording` if you want to save it.
-9. Use `Clear Recording` if you want to remove it and make another try.
+3. Use `Play`, `Back 10s`, `Forward 10s`, and the seek bar to move through the prompt.
+4. Pause at any point to create a repeatable practice segment.
+5. Press `Repeat` to replay exactly the section from your last play point to your current pause point, and it will stop at the same pause point again so you can repeat it as many times as you want.
+6. Press `Play` again when you want to continue forward and create a new repeat segment from that point.
+7. Click `Start Recording` to record your response.
+8. Allow microphone access when your browser asks.
+9. Click `Stop Recording` when you finish.
+10. Use the playback controls to listen to your recording.
+11. Use `Download Recording` if you want to save it.
+12. Use `Clear Recording` if you want to remove it and make another try.
 
 ### Writing Tab
 
@@ -78,7 +82,7 @@ You do not need to run any terminal command or local server.
 
 ## Best Way To Use It
 
-- Use the speaking side to shadow short clips and compare your fluency
+- Use the speaking side to shadow short clips, then loop the last played segment with `Repeat` until it feels natural
 - Use the writing timer for fast essay drills
 - Copy your writing into another tool if you want outside scoring or review
 - Repeat often with short daily sessions
