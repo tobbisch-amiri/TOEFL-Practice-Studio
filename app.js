@@ -512,6 +512,34 @@
         }
       }
 
+      function hasLiveRecorderStream() {
+        return Boolean(
+          recorderStream &&
+          recorderStream.getAudioTracks().some((track) => track.readyState === "live")
+        );
+      }
+
+      function setRecorderStreamEnabled(enabled) {
+        if (!recorderStream) {
+          return;
+        }
+
+        recorderStream.getAudioTracks().forEach((track) => {
+          if (track.readyState === "live") {
+            track.enabled = enabled;
+          }
+        });
+      }
+
+      async function ensureRecorderStream() {
+        if (hasLiveRecorderStream()) {
+          return recorderStream;
+        }
+
+        recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        return recorderStream;
+      }
+
       function updateRecordingLive() {
         if (!isRecording) {
           recordingLive.textContent = "";
@@ -587,7 +615,8 @@
         setRecordingStatus("", "");
 
         try {
-          recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const stream = await ensureRecorderStream();
+          setRecorderStreamEnabled(true);
           clearRecordingAudio();
           recordingChunks = [];
           recordingElapsedSeconds = 0;
@@ -598,8 +627,8 @@
             : "";
 
           mediaRecorder = preferredMimeType
-            ? new MediaRecorder(recorderStream, { mimeType: preferredMimeType })
-            : new MediaRecorder(recorderStream);
+            ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+            : new MediaRecorder(stream);
 
           mediaRecorder.addEventListener("dataavailable", (event) => {
             if (event.data.size > 0) {
@@ -611,7 +640,7 @@
             const mimeType = mediaRecorder.mimeType || "audio/webm";
             const blob = new Blob(recordingChunks, { type: mimeType });
             createRecordingPreview(blob);
-            stopRecorderStream();
+            setRecorderStreamEnabled(false);
             // setRecordingStatus("Recording captured. You can play, download, or clear it below.", "success");
           });
 
@@ -622,7 +651,7 @@
           }, 1000);
           setRecordingUI(true);
         } catch (error) {
-          stopRecorderStream();
+          setRecorderStreamEnabled(false);
           const permissionMessage = error && error.name === "NotAllowedError"
             ? "Microphone permission was denied. Allow access and try again."
             : "Could not start recording. Please check your microphone and browser permissions.";
@@ -640,7 +669,7 @@
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
           mediaRecorder.stop();
         } else {
-          stopRecorderStream();
+          setRecorderStreamEnabled(false);
         }
 
         setRecordingUI(false);
