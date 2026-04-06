@@ -29,6 +29,9 @@
         <button class="tab-button" id="tab-build-sentence" type="button" role="tab" aria-selected="false" aria-controls="panel-build-sentence" data-target="build-sentence">
           Build Sentence
         </button>
+        <button class="tab-button" id="tab-complete-words" type="button" role="tab" aria-selected="false" aria-controls="panel-complete-words" data-target="complete-words">
+          Complete Words
+        </button>
       </div>
     </nav>
 
@@ -290,6 +293,88 @@ Use examples, transitions, and quick structure notes here."></textarea>
             </div>
 
             <div class="status-message" id="sentence-status" aria-live="polite"></div>
+          </section>
+        </article>
+      </section>
+
+      <section class="panel" id="panel-complete-words" role="tabpanel" aria-labelledby="tab-complete-words">
+        <article class="card build-card">
+          <section id="complete-words-intake-view">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Complete Words Intake</h2>
+                <p class="card-subtitle">Paste one paragraph once, keep it hidden, then complete 10 missing word parts directly inside the paragraph.</p>
+              </div>
+              <div class="pill">Paste only</div>
+            </div>
+
+            <div class="timer-setup build-config-row">
+              <label class="input-shell" for="complete-words-minutes">
+                <span>Minutes for paragraph</span>
+                <input id="complete-words-minutes" type="number" min="1" max="30" value="2">
+              </label>
+              <div class="stat-chip">Targets <strong id="complete-words-target-count">10</strong></div>
+            </div>
+
+            <div class="countdown-note" id="complete-words-input-note" aria-live="polite">Click the paste area and paste one paragraph. The app captures it without showing the paragraph back to you.</div>
+
+            <div class="complete-paste-shell">
+              <div class="complete-paste-zone" id="complete-words-paste-zone" tabindex="0" role="button" aria-label="Paste paragraph here">
+                <div>
+                  <strong>Paste Paragraph</strong>
+                  <p>Click here, then press <kbd>Ctrl</kbd> + <kbd>V</kbd> or <kbd>Cmd</kbd> + <kbd>V</kbd>. The paragraph is processed privately and never echoed back on screen.</p>
+                </div>
+              </div>
+
+              <div class="complete-paste-summary" id="complete-words-paste-summary" hidden>
+                <h3 id="complete-words-paste-summary-title">No paragraph loaded</h3>
+                <p id="complete-words-paste-summary-text">Paste a paragraph to begin.</p>
+              </div>
+
+              <div class="markdown-actions build-intake-actions">
+                <button class="button button-secondary" id="complete-words-clear-paste" type="button" hidden>Clear Paragraph</button>
+                <button class="button button-primary" id="complete-words-start-button" type="button" hidden disabled>Start Practice</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="complete-words-practice-view" hidden>
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Complete Words Practice</h2>
+                <p class="card-subtitle">Type the missing letters right in the paragraph. When one gap is full, the cursor automatically jumps to the next gap.</p>
+              </div>
+              <div class="pill">10 gaps</div>
+            </div>
+
+            <div class="stats-row build-session-stats">
+              <div class="stat-chip">Filled <strong id="complete-words-progress-label">0 / 10</strong></div>
+              <div class="stat-chip">Time Left <strong id="complete-words-time-left">02:00</strong></div>
+              <button class="button button-primary build-next-button" id="complete-words-finish-button" type="button" disabled>Finish</button>
+            </div>
+
+            <div class="countdown-note" id="complete-words-session-note" aria-live="polite">Your hidden paragraph is ready. Type the missing letters and the cursor will keep moving forward as gaps are completed.</div>
+
+            <div class="complete-practice-shell">
+              <section class="complete-paragraph-stage" id="complete-words-stage">
+                <div class="sentence-instructions">Click any gap to type there. When a gap reaches its full letter count, focus moves to the next gap automatically.</div>
+                <div class="complete-paragraph-body" id="complete-words-paragraph"></div>
+              </section>
+
+              <section class="complete-results" id="complete-words-results" hidden>
+                <div class="build-results-summary">
+                  <h3 id="complete-words-results-title">Results</h3>
+                  <p id="complete-words-results-score">Finish the paragraph to see your score.</p>
+                </div>
+                <div class="complete-review-body" id="complete-words-review"></div>
+                <div class="markdown-actions build-results-actions">
+                  <button class="button button-secondary" id="complete-words-new-set" type="button">Paste New Paragraph</button>
+                  <button class="button button-primary" id="complete-words-practice-again" type="button">Practice Again</button>
+                </div>
+              </section>
+            </div>
+
+            <div class="status-message" id="complete-words-status" aria-live="polite"></div>
           </section>
         </article>
       </section>

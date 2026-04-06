@@ -1651,15 +1651,576 @@
         updateSentenceTimeDisplay();
       });
 
+      // ---------- Reading: complete the words ----------
+      const completeWordsIntakeView = document.getElementById("complete-words-intake-view");
+      const completeWordsPracticeView = document.getElementById("complete-words-practice-view");
+      const completeWordsMinutes = document.getElementById("complete-words-minutes");
+      const completeWordsTargetCount = document.getElementById("complete-words-target-count");
+      const completeWordsInputNote = document.getElementById("complete-words-input-note");
+      const completeWordsPasteZone = document.getElementById("complete-words-paste-zone");
+      const completeWordsPasteSummary = document.getElementById("complete-words-paste-summary");
+      const completeWordsPasteSummaryTitle = document.getElementById("complete-words-paste-summary-title");
+      const completeWordsPasteSummaryText = document.getElementById("complete-words-paste-summary-text");
+      const completeWordsClearPaste = document.getElementById("complete-words-clear-paste");
+      const completeWordsStartButton = document.getElementById("complete-words-start-button");
+      const completeWordsProgressLabel = document.getElementById("complete-words-progress-label");
+      const completeWordsTimeLeft = document.getElementById("complete-words-time-left");
+      const completeWordsFinishButton = document.getElementById("complete-words-finish-button");
+      const completeWordsSessionNote = document.getElementById("complete-words-session-note");
+      const completeWordsStage = document.getElementById("complete-words-stage");
+      const completeWordsParagraph = document.getElementById("complete-words-paragraph");
+      const completeWordsResults = document.getElementById("complete-words-results");
+      const completeWordsResultsTitle = document.getElementById("complete-words-results-title");
+      const completeWordsResultsScore = document.getElementById("complete-words-results-score");
+      const completeWordsReview = document.getElementById("complete-words-review");
+      const completeWordsNewSet = document.getElementById("complete-words-new-set");
+      const completeWordsPracticeAgain = document.getElementById("complete-words-practice-again");
+      const completeWordsStatus = document.getElementById("complete-words-status");
+
+      const COMPLETE_WORDS_GAP_COUNT = 10;
+      const COMPLETE_WORDS_PATTERN = /[A-Za-z]{4,}/g;
+
+      const completeWordsState = {
+        paragraphSource: "",
+        question: null,
+        timerId: null,
+        remainingSeconds: 120,
+        totalSeconds: 120,
+        sessionActive: false
+      };
+
+      function setCompleteWordsStatus(message, tone) {
+        completeWordsStatus.textContent = message || "";
+        completeWordsStatus.className = "status-message" + (tone ? " " + tone : "");
+      }
+
+      function setCompleteWordsInputMessage(message, tone) {
+        completeWordsInputNote.innerHTML = message;
+        completeWordsInputNote.className = "countdown-note" + (tone ? " " + tone : "");
+      }
+
+      function setCompleteWordsSessionMessage(message, tone) {
+        completeWordsSessionNote.textContent = message || "";
+        completeWordsSessionNote.className = "countdown-note" + (tone ? " " + tone : "");
+      }
+
+      function showCompleteWordsIntakeView() {
+        completeWordsIntakeView.hidden = false;
+        completeWordsPracticeView.hidden = true;
+      }
+
+      function showCompleteWordsPracticeView() {
+        completeWordsIntakeView.hidden = true;
+        completeWordsPracticeView.hidden = false;
+      }
+
+      function clearCompleteWordsTimer() {
+        if (completeWordsState.timerId) {
+          window.clearInterval(completeWordsState.timerId);
+          completeWordsState.timerId = null;
+        }
+      }
+
+      function getCompleteWordsSecondsSetting() {
+        const minutes = Math.max(1, Number(completeWordsMinutes.value) || 2);
+        completeWordsMinutes.value = String(minutes);
+        return Math.round(minutes * 60);
+      }
+
+      function updateCompleteWordsTimeDisplay() {
+        completeWordsTimeLeft.textContent = formatTime(completeWordsState.remainingSeconds);
+      }
+
+      function getCompleteWordsFilledCount() {
+        if (!completeWordsState.question) {
+          return 0;
+        }
+
+        return completeWordsState.question.targets.filter((target) => target.userValue.length === target.missing.length).length;
+      }
+
+      function updateCompleteWordsProgress() {
+        completeWordsProgressLabel.textContent = String(getCompleteWordsFilledCount()) + " / " + String(COMPLETE_WORDS_GAP_COUNT);
+      }
+
+      function syncCompleteWordsSessionNote() {
+        if (!completeWordsState.sessionActive) {
+          setCompleteWordsSessionMessage("Your hidden paragraph is ready. Type the missing letters and the cursor will keep moving forward as gaps are completed.");
+          return;
+        }
+
+        if (completeWordsState.remainingSeconds <= 20) {
+          setCompleteWordsSessionMessage("Final 20 seconds. Finish the missing letters or the review will open automatically.", "is-alert");
+        } else {
+          setCompleteWordsSessionMessage("Fill the missing letters. When a gap is full, focus moves to the next gap.");
+        }
+      }
+
+      function syncCompleteWordsSummary() {
+        updateCompleteWordsTimeDisplay();
+        updateCompleteWordsProgress();
+        syncCompleteWordsSessionNote();
+      }
+
+      function setCompleteWordsPasteZoneReady(isReady) {
+        completeWordsPasteZone.classList.toggle("is-ready", isReady);
+        completeWordsPasteZone.innerHTML = isReady
+          ? `
+            <div>
+              <strong>Paragraph Captured</strong>
+              <p>Your paragraph is stored privately. Paste again here any time if you want to replace it before starting.</p>
+            </div>
+          `
+          : `
+            <div>
+              <strong>Paste Paragraph</strong>
+              <p>Click here, then press <kbd>Ctrl</kbd> + <kbd>V</kbd> or <kbd>Cmd</kbd> + <kbd>V</kbd>. The paragraph is processed privately and never echoed back on screen.</p>
+            </div>
+          `;
+      }
+
+      function extractCompleteWordsParagraph(source) {
+        return normalizeWhitespace(
+          source
+            .replace(/\r\n?/g, "\n")
+            .split("\n")
+            .map((line) => stripSimpleMarkdown(line))
+            .filter(Boolean)
+            .join(" ")
+        );
+      }
+
+      function chooseCompleteWordsTarget(word) {
+        const maxMissingLength = Math.min(4, word.length - 1);
+        const minMissingLength = Math.min(2, maxMissingLength);
+        const missingLength = minMissingLength + Math.floor(Math.random() * (maxMissingLength - minMissingLength + 1));
+        const options = [];
+
+        if (word.length - missingLength >= 1) {
+          options.push("start");
+          options.push("end");
+        }
+
+        if (word.length - missingLength >= 2) {
+          options.push("middle");
+        }
+
+        const mode = options[Math.floor(Math.random() * options.length)];
+        let startIndex = 0;
+
+        if (mode === "end") {
+          startIndex = word.length - missingLength;
+        } else if (mode === "middle") {
+          const startMin = 1;
+          const startMax = word.length - missingLength - 1;
+          startIndex = startMin + Math.floor(Math.random() * (startMax - startMin + 1));
+        }
+
+        return {
+          prefix: word.slice(0, startIndex),
+          missing: word.slice(startIndex, startIndex + missingLength),
+          suffix: word.slice(startIndex + missingLength)
+        };
+      }
+
+      function buildCompleteWordsQuestion(paragraph) {
+        const matches = Array.from(paragraph.matchAll(COMPLETE_WORDS_PATTERN)).map((match, matchIndex) => ({
+          word: match[0],
+          index: match.index,
+          wordIndex: matchIndex
+        }));
+
+        if (matches.length < COMPLETE_WORDS_GAP_COUNT) {
+          return null;
+        }
+
+        const selectedIndexes = new Set(
+          shuffleArray(matches.map((match) => match.wordIndex)).slice(0, COMPLETE_WORDS_GAP_COUNT)
+        );
+
+        const targets = matches
+          .filter((match) => selectedIndexes.has(match.wordIndex))
+          .map((match, targetIndex) => {
+            const target = chooseCompleteWordsTarget(match.word);
+            return {
+              id: "complete-word-" + targetIndex,
+              wordIndex: match.wordIndex,
+              index: match.index,
+              originalWord: match.word,
+              prefix: target.prefix,
+              missing: target.missing,
+              suffix: target.suffix,
+              userValue: ""
+            };
+          })
+          .sort((left, right) => left.index - right.index);
+
+        return {
+          paragraph,
+          matches,
+          targets,
+          targetByWordIndex: new Map(targets.map((target) => [target.wordIndex, target]))
+        };
+      }
+
+      function getCompleteWordsTargetIndex(targetId) {
+        if (!completeWordsState.question) {
+          return -1;
+        }
+
+        return completeWordsState.question.targets.findIndex((target) => target.id === targetId);
+      }
+
+      function focusCompleteWordsTarget(targetIndex) {
+        const target = completeWordsState.question ? completeWordsState.question.targets[targetIndex] : null;
+        if (!target) {
+          completeWordsFinishButton.focus();
+          return;
+        }
+
+        const input = completeWordsParagraph.querySelector('[data-target-id="' + target.id + '"]');
+        if (input) {
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+
+      function updateCompleteWordsTargetValue(targetId, nextValue) {
+        if (!completeWordsState.question) {
+          return;
+        }
+
+        const target = completeWordsState.question.targets.find((item) => item.id === targetId);
+        if (!target) {
+          return;
+        }
+
+        target.userValue = nextValue;
+        syncCompleteWordsSummary();
+      }
+
+      function renderCompleteWordsParagraph() {
+        const question = completeWordsState.question;
+        if (!question) {
+          completeWordsParagraph.innerHTML = "";
+          return;
+        }
+
+        completeWordsParagraph.innerHTML = "";
+        let cursor = 0;
+
+        question.matches.forEach((match) => {
+          if (match.index > cursor) {
+            completeWordsParagraph.appendChild(document.createTextNode(question.paragraph.slice(cursor, match.index)));
+          }
+
+          const target = question.targetByWordIndex.get(match.wordIndex);
+          if (!target) {
+            completeWordsParagraph.appendChild(document.createTextNode(match.word));
+          } else {
+            const wrapper = document.createElement("span");
+            wrapper.className = "complete-gap";
+
+            if (target.prefix) {
+              const prefix = document.createElement("span");
+              prefix.className = "complete-gap-part";
+              prefix.textContent = target.prefix;
+              wrapper.appendChild(prefix);
+            }
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "complete-gap-input" + (target.userValue.length === target.missing.length ? " is-complete" : "");
+            input.value = target.userValue;
+            input.maxLength = target.missing.length;
+            input.placeholder = "_".repeat(target.missing.length);
+            input.setAttribute("aria-label", "Complete missing letters");
+            input.setAttribute("data-target-id", target.id);
+            input.autocomplete = "off";
+            input.spellcheck = false;
+            input.style.setProperty("--gap-chars", String(target.missing.length));
+
+            input.addEventListener("input", (event) => {
+              const sanitized = event.target.value.replace(/[^A-Za-z]/g, "").slice(0, target.missing.length);
+              event.target.value = sanitized;
+              updateCompleteWordsTargetValue(target.id, sanitized);
+              event.target.classList.toggle("is-complete", sanitized.length === target.missing.length);
+
+              if (sanitized.length === target.missing.length) {
+                const nextIndex = getCompleteWordsTargetIndex(target.id) + 1;
+                if (nextIndex < question.targets.length) {
+                  focusCompleteWordsTarget(nextIndex);
+                } else {
+                  completeWordsFinishButton.focus();
+                }
+              }
+            });
+
+            input.addEventListener("keydown", (event) => {
+              if (event.key === "Backspace" && !event.currentTarget.value) {
+                const previousIndex = getCompleteWordsTargetIndex(target.id) - 1;
+                if (previousIndex >= 0) {
+                  event.preventDefault();
+                  focusCompleteWordsTarget(previousIndex);
+                }
+              }
+            });
+
+            wrapper.appendChild(input);
+
+            if (target.suffix) {
+              const suffix = document.createElement("span");
+              suffix.className = "complete-gap-part";
+              suffix.textContent = target.suffix;
+              wrapper.appendChild(suffix);
+            }
+
+            completeWordsParagraph.appendChild(wrapper);
+          }
+
+          cursor = match.index + match.word.length;
+        });
+
+        if (cursor < question.paragraph.length) {
+          completeWordsParagraph.appendChild(document.createTextNode(question.paragraph.slice(cursor)));
+        }
+      }
+
+      function renderCompleteWordsReview() {
+        const question = completeWordsState.question;
+        if (!question) {
+          completeWordsReview.innerHTML = "";
+          return;
+        }
+
+        completeWordsReview.innerHTML = "";
+        let cursor = 0;
+
+        question.matches.forEach((match) => {
+          if (match.index > cursor) {
+            completeWordsReview.appendChild(document.createTextNode(question.paragraph.slice(cursor, match.index)));
+          }
+
+          const target = question.targetByWordIndex.get(match.wordIndex);
+          if (!target) {
+            completeWordsReview.appendChild(document.createTextNode(match.word));
+          } else {
+            const isCorrect = target.userValue.toLowerCase() === target.missing.toLowerCase();
+
+            if (isCorrect) {
+              const correctWord = document.createElement("span");
+              correctWord.className = "complete-review-word is-correct";
+              correctWord.textContent = target.originalWord;
+              completeWordsReview.appendChild(correctWord);
+            } else {
+              const wrongWord = document.createElement("span");
+              wrongWord.className = "complete-review-word is-wrong";
+
+              if (target.prefix) {
+                wrongWord.appendChild(document.createTextNode(target.prefix));
+              }
+
+              const typed = document.createElement("span");
+              typed.className = "complete-review-typed";
+              typed.textContent = target.userValue || "_".repeat(target.missing.length);
+              wrongWord.appendChild(typed);
+
+              const correction = document.createElement("span");
+              correction.className = "complete-review-correct";
+              correction.textContent = target.missing;
+              wrongWord.appendChild(correction);
+
+              if (target.suffix) {
+                wrongWord.appendChild(document.createTextNode(target.suffix));
+              }
+
+              completeWordsReview.appendChild(wrongWord);
+            }
+          }
+
+          cursor = match.index + match.word.length;
+        });
+
+        if (cursor < question.paragraph.length) {
+          completeWordsReview.appendChild(document.createTextNode(question.paragraph.slice(cursor)));
+        }
+      }
+
+      function finishCompleteWordsPractice(reason) {
+        clearCompleteWordsTimer();
+        completeWordsState.sessionActive = false;
+        completeWordsStage.hidden = true;
+        completeWordsResults.hidden = false;
+        completeWordsFinishButton.disabled = true;
+        if (reason === "timeout") {
+          completeWordsState.remainingSeconds = 0;
+        }
+
+        renderCompleteWordsReview();
+
+        const correctCount = completeWordsState.question
+          ? completeWordsState.question.targets.filter((target) => target.userValue.toLowerCase() === target.missing.toLowerCase()).length
+          : 0;
+
+        completeWordsResultsTitle.textContent = String(correctCount) + " / " + String(COMPLETE_WORDS_GAP_COUNT) + " correct";
+        completeWordsResultsScore.textContent = reason === "timeout"
+          ? "Time is up. Review the paragraph and the corrected missing parts below."
+          : "Paragraph finished. Review the corrected missing parts below.";
+        setCompleteWordsStatus(correctCount === COMPLETE_WORDS_GAP_COUNT ? "Excellent round. Every missing part was correct." : "Practice review is ready below.", correctCount === COMPLETE_WORDS_GAP_COUNT ? "success" : "");
+        syncCompleteWordsSummary();
+      }
+
+      function startCompleteWordsPractice() {
+        if (!completeWordsState.paragraphSource) {
+          setCompleteWordsInputMessage("Paste a paragraph first, then start the round.", "is-danger");
+          return;
+        }
+
+        const question = buildCompleteWordsQuestion(completeWordsState.paragraphSource);
+        if (!question) {
+          setCompleteWordsInputMessage("This paragraph does not have enough eligible words. Please paste a paragraph with at least 10 words that are 4 letters or longer.", "is-danger");
+          return;
+        }
+
+        completeWordsState.question = question;
+        completeWordsState.totalSeconds = getCompleteWordsSecondsSetting();
+        completeWordsState.remainingSeconds = completeWordsState.totalSeconds;
+        completeWordsState.sessionActive = true;
+        showCompleteWordsPracticeView();
+        completeWordsStage.hidden = false;
+        completeWordsResults.hidden = true;
+        completeWordsFinishButton.disabled = false;
+        setCompleteWordsStatus("Practice round started. Finish any time or wait for the timer.", "success");
+        renderCompleteWordsParagraph();
+        syncCompleteWordsSummary();
+        focusCompleteWordsTarget(0);
+
+        completeWordsState.timerId = window.setInterval(() => {
+          completeWordsState.remainingSeconds -= 1;
+
+          if (completeWordsState.remainingSeconds <= 0) {
+            finishCompleteWordsPractice("timeout");
+            return;
+          }
+
+          syncCompleteWordsSummary();
+        }, 1000);
+      }
+
+      function resetCompleteWordsState() {
+        clearCompleteWordsTimer();
+        completeWordsState.paragraphSource = "";
+        completeWordsState.question = null;
+        completeWordsState.sessionActive = false;
+        completeWordsState.totalSeconds = getCompleteWordsSecondsSetting();
+        completeWordsState.remainingSeconds = completeWordsState.totalSeconds;
+        completeWordsTargetCount.textContent = String(COMPLETE_WORDS_GAP_COUNT);
+        setCompleteWordsPasteZoneReady(false);
+        completeWordsPasteSummary.hidden = true;
+        completeWordsClearPaste.hidden = true;
+        completeWordsStartButton.hidden = true;
+        completeWordsStartButton.disabled = true;
+        completeWordsStage.hidden = false;
+        completeWordsResults.hidden = true;
+        completeWordsFinishButton.disabled = true;
+        completeWordsParagraph.innerHTML = "";
+        completeWordsReview.innerHTML = "";
+        setCompleteWordsStatus("", "");
+        syncCompleteWordsSummary();
+      }
+
+      function processCompleteWordsPaste(pastedText) {
+        const paragraph = extractCompleteWordsParagraph(pastedText);
+
+        if (!paragraph) {
+          resetCompleteWordsState();
+          setCompleteWordsInputMessage("No valid paragraph was found in that paste. Please paste one normal paragraph of text.", "is-danger");
+          return;
+        }
+
+        const previewQuestion = buildCompleteWordsQuestion(paragraph);
+        if (!previewQuestion) {
+          resetCompleteWordsState();
+          setCompleteWordsInputMessage("Please paste a longer paragraph. I need at least 10 words that are 4 letters or longer to create the missing parts.", "is-danger");
+          return;
+        }
+
+        clearCompleteWordsTimer();
+        completeWordsState.paragraphSource = paragraph;
+        completeWordsState.question = null;
+        completeWordsState.sessionActive = false;
+        completeWordsState.totalSeconds = getCompleteWordsSecondsSetting();
+        completeWordsState.remainingSeconds = completeWordsState.totalSeconds;
+        completeWordsTargetCount.textContent = String(COMPLETE_WORDS_GAP_COUNT);
+        setCompleteWordsPasteZoneReady(true);
+        completeWordsPasteSummary.hidden = false;
+        completeWordsPasteSummaryTitle.textContent = "Paragraph ready";
+        completeWordsPasteSummaryText.textContent = "The paragraph is hidden and eligible for 10 missing word parts. Starting will build a fresh set of blanks.";
+        completeWordsClearPaste.hidden = false;
+        completeWordsStartButton.hidden = false;
+        completeWordsStartButton.disabled = false;
+        setCompleteWordsInputMessage("Pasted successfully. The paragraph was captured without being shown back to you.");
+        setCompleteWordsStatus("", "");
+        syncCompleteWordsSummary();
+      }
+
+      function returnToCompleteWordsIntake() {
+        resetCompleteWordsState();
+        showCompleteWordsIntakeView();
+        setCompleteWordsInputMessage("Click the paste area and paste one paragraph. The app captures it without showing the paragraph back to you.");
+        completeWordsPasteZone.focus();
+      }
+
+      completeWordsPasteZone.addEventListener("click", () => {
+        completeWordsPasteZone.focus();
+      });
+
+      completeWordsPasteZone.addEventListener("paste", (event) => {
+        event.preventDefault();
+        const pastedText = event.clipboardData ? event.clipboardData.getData("text/plain") : "";
+        processCompleteWordsPaste(pastedText);
+      });
+
+      completeWordsClearPaste.addEventListener("click", () => {
+        resetCompleteWordsState();
+        setCompleteWordsInputMessage("Paragraph cleared. Paste a new paragraph whenever you are ready.");
+        completeWordsPasteZone.focus();
+      });
+
+      completeWordsStartButton.addEventListener("click", startCompleteWordsPractice);
+      completeWordsPracticeAgain.addEventListener("click", startCompleteWordsPractice);
+      completeWordsNewSet.addEventListener("click", returnToCompleteWordsIntake);
+
+      completeWordsFinishButton.addEventListener("click", () => {
+        if (!completeWordsState.sessionActive) {
+          return;
+        }
+
+        finishCompleteWordsPractice("manual");
+      });
+
+      completeWordsMinutes.addEventListener("input", () => {
+        if (completeWordsState.sessionActive) {
+          return;
+        }
+
+        completeWordsState.totalSeconds = getCompleteWordsSecondsSetting();
+        completeWordsState.remainingSeconds = completeWordsState.totalSeconds;
+        updateCompleteWordsTimeDisplay();
+      });
+
       updateTextCounts();
       resetTimerFromInput();
       resetSentencePasteState();
       showSentenceIntakeView();
       syncSentencePracticeSummary();
+      resetCompleteWordsState();
+      showCompleteWordsIntakeView();
 
       // Cleanup object URLs and media streams if the page closes or reloads.
       window.addEventListener("beforeunload", () => {
         clearSentenceTimer();
+        clearCompleteWordsTimer();
         clearCurrentMedia();
         clearRecordingAudio();
         stopRecorderStream();

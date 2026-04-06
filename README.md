@@ -50,6 +50,18 @@ You do not need to run any terminal command or local server.
 - Drag-and-drop word bank with tap-to-select and tap-to-place fallback
 - Delayed scoring so correctness appears only after the full set is finished
 
+### Complete The Words Practice
+
+- A dedicated `Complete Words` tab for paragraph-based word-completion practice
+- Paste-only intake so the source paragraph is captured without being shown back to you
+- Automatic generation of `10` missing word parts inside the paragraph
+- Missing letters can come from the beginning, middle, or end of a word
+- Inline typing directly in the paragraph rather than in a separate answer list
+- Auto-advance to the next blank when the current blank reaches its full letter count
+- Click-any-gap editing so you can jump to any missing part manually
+- Default paragraph timer of `2` minutes, adjustable before starting
+- Review mode that shows the corrected paragraph, with correct fills in green and wrong fills visibly corrected
+
 ## How To Use
 
 ### Speaking Tab
@@ -100,6 +112,21 @@ You do not need to run any terminal command or local server.
 11. After the final sentence, review your full results with correct and incorrect marks.
 12. Use `Practice Again` to reuse the same hidden set, or `Paste New Set` to load a fresh one.
 
+### Complete Words Tab
+
+1. Open the `Complete Words` tab.
+2. Set the number of minutes you want for the paragraph. The default is `2`.
+3. Click the paste area.
+4. Paste one paragraph using `Ctrl + V` or `Cmd + V`.
+5. Wait for the app to confirm the paragraph was captured privately.
+6. Click `Start Practice`.
+7. Type the missing letters directly into each blank area inside the paragraph.
+8. Let the app move your cursor forward automatically as each gap fills up, or click any gap to edit it manually.
+9. Click `Finish` when you want to stop early.
+10. If time reaches zero, the app opens the review automatically.
+11. Review the corrected paragraph with green correct fills and visibly corrected wrong fills.
+12. Use `Practice Again` to generate a fresh set of gaps from the same hidden paragraph, or `Paste New Paragraph` to load another one.
+
 ## Notes
 
 - Everything is in memory only unless you download a recording yourself.
@@ -107,11 +134,13 @@ You do not need to run any terminal command or local server.
 - Microphone recording depends on browser support for `getUserMedia` and `MediaRecorder`.
 - The app includes CDN links for Tailwind and Markdown rendering, but the core project remains local and simple to open.
 - The Build Sentence intake is designed for pasting, not editing, so the source sentences are not echoed back on screen.
+- The Complete Words intake is also paste-only, so the source paragraph is not echoed back on screen.
 
 ## Best Way To Use It
 
 - Use the speaking side to shadow short clips, then loop the last played segment with `Repeat` until it feels natural
 - Use the writing timer for fast essay drills
 - Use Build Sentence for quick timed sentence-order rounds from AI-generated or self-made sets
+- Use Complete Words for fast context-based vocabulary and spelling practice inside one hidden paragraph
 - Copy your writing into another tool if you want outside scoring or review
 - Repeat often with short daily sessions

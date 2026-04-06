@@ -1146,6 +1146,201 @@
       color: var(--text);
     }
 
+    .complete-paste-shell {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .complete-paste-zone,
+    .complete-paste-summary {
+      padding: 1.1rem 1.15rem;
+      border-radius: var(--radius-md);
+    }
+
+    .complete-paste-zone {
+      display: grid;
+      place-items: center;
+      min-height: 18rem;
+      text-align: center;
+      border: 2px dashed rgba(45, 212, 191, 0.35);
+      background:
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.1), transparent 38%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(8, 15, 30, 0.86));
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background var(--transition);
+      outline: none;
+    }
+
+    .complete-paste-zone:hover,
+    .complete-paste-zone:focus-visible {
+      border-color: rgba(45, 212, 191, 0.9);
+      box-shadow: 0 0 0 5px rgba(45, 212, 191, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .complete-paste-zone strong {
+      display: block;
+      font-size: 1.15rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .complete-paste-zone p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 34rem;
+    }
+
+    .complete-paste-zone kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      padding: 0.18rem 0.42rem;
+      margin: 0 0.12rem;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      font: 700 0.82rem/1 var(--font-body);
+    }
+
+    .complete-paste-zone.is-ready {
+      min-height: 11rem;
+      border-style: solid;
+      border-color: rgba(45, 212, 191, 0.42);
+      background:
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(8, 15, 30, 0.9));
+    }
+
+    .complete-paste-summary {
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.68);
+    }
+
+    .complete-paste-summary h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .complete-paste-summary p {
+      margin: 0.4rem 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .complete-practice-shell {
+      display: grid;
+      gap: 1rem;
+      min-height: 28rem;
+      margin-top: 1rem;
+    }
+
+    .complete-paragraph-stage,
+    .complete-results {
+      min-height: 22rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: rgba(8, 15, 30, 0.72);
+    }
+
+    .complete-paragraph-stage {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      padding: 1rem;
+    }
+
+    .complete-paragraph-body,
+    .complete-review-body {
+      padding: 1.15rem;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at top left, rgba(45, 212, 191, 0.08), transparent 28%),
+        rgba(15, 23, 42, 0.82);
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 2.1;
+      word-break: break-word;
+    }
+
+    .complete-gap {
+      display: inline-flex;
+      align-items: center;
+      margin: 0 0.08rem;
+      white-space: nowrap;
+    }
+
+    .complete-gap-part {
+      color: var(--text);
+    }
+
+    .complete-gap-input {
+      width: calc(var(--gap-chars, 2) * 0.78ch + 1rem);
+      min-width: 2.4rem;
+      margin: 0 0.08rem;
+      padding: 0.18rem 0.3rem;
+      border: 0;
+      border-bottom: 2px solid rgba(45, 212, 191, 0.55);
+      border-radius: 8px 8px 0 0;
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text);
+      text-align: center;
+      text-transform: lowercase;
+      font: 700 1rem/1.2 var(--font-mono);
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16);
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .complete-gap-input::placeholder {
+      color: #91a0b5;
+      letter-spacing: 0.08em;
+    }
+
+    .complete-gap-input:focus {
+      border-bottom-color: rgba(251, 191, 36, 0.9);
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
+      background: rgba(15, 23, 42, 1);
+    }
+
+    .complete-gap-input.is-complete {
+      border-bottom-color: rgba(45, 212, 191, 0.95);
+    }
+
+    .complete-results {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      padding: 1rem;
+    }
+
+    .complete-review-word.is-correct {
+      color: #86efac;
+      font-weight: 700;
+    }
+
+    .complete-review-word.is-wrong {
+      color: #fecaca;
+    }
+
+    .complete-review-typed {
+      color: #fca5a5;
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+      margin: 0 0.03rem;
+    }
+
+    .complete-review-correct {
+      color: #86efac;
+      font-weight: 700;
+      margin: 0 0.03rem;
+    }
+
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -1232,6 +1427,16 @@
       .sentence-bank-word,
       .sentence-terminal-punctuation {
         width: 100%;
+      }
+
+      .complete-gap {
+        display: inline-grid;
+        justify-items: start;
+      }
+
+      .complete-gap-input {
+        width: 100%;
+        min-width: calc(var(--gap-chars, 2) * 1ch + 1.3rem);
       }
 
       .sentence-prompt,
