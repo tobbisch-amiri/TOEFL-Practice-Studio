@@ -26,6 +26,9 @@
         <button class="tab-button" id="tab-writing" type="button" role="tab" aria-selected="false" aria-controls="panel-writing" data-target="writing">
           Writing
         </button>
+        <button class="tab-button" id="tab-build-sentence" type="button" role="tab" aria-selected="false" aria-controls="panel-build-sentence" data-target="build-sentence">
+          Build Sentence
+        </button>
       </div>
     </nav>
 
@@ -200,6 +203,95 @@ Use examples, transitions, and quick structure notes here."></textarea>
             <div class="soft-divider"></div>
           </article>
         </div>
+      </section>
+
+      <section class="panel" id="panel-build-sentence" role="tabpanel" aria-labelledby="tab-build-sentence">
+        <article class="card build-card">
+          <section id="sentence-intake-view">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Sentence Set Intake</h2>
+                <p class="card-subtitle">Paste numbered sentences once, keep them hidden, and move straight into a full-screen style practice board.</p>
+              </div>
+              <div class="pill">Paste only</div>
+            </div>
+
+            <div class="timer-setup build-config-row">
+              <label class="input-shell" for="sentence-timer-seconds">
+                <span>Seconds per sentence</span>
+                <input id="sentence-timer-seconds" type="number" min="5" max="300" value="45">
+              </label>
+              <div class="stat-chip">Loaded <strong id="sentence-question-count">0</strong></div>
+            </div>
+
+            <div class="countdown-note" id="sentence-input-note" aria-live="polite">Click the paste area and paste a numbered list like <code>1. Sentence here</code>, <code>2) Sentence here</code>, or <code>3 Sentence here</code>. The pasted text is processed without being shown back to you.</div>
+
+            <div class="build-paste-shell">
+              <div class="build-paste-zone" id="sentence-paste-zone" tabindex="0" role="button" aria-label="Paste numbered sentences here">
+                <div>
+                  <strong>Paste Sentence Set</strong>
+                  <p>Click here, then press <kbd>Ctrl</kbd> + <kbd>V</kbd> or <kbd>Cmd</kbd> + <kbd>V</kbd>. The app will accept the pasted text but will not reveal the questions.</p>
+                </div>
+              </div>
+
+              <div class="build-paste-summary" id="sentence-paste-summary" hidden>
+                <h3 id="sentence-paste-summary-title">No set loaded</h3>
+                <p id="sentence-paste-summary-text">Paste a numbered list to begin.</p>
+              </div>
+
+              <div class="markdown-actions build-intake-actions">
+                <button class="button button-secondary" id="sentence-clear-paste" type="button" hidden>Clear Set</button>
+                <button class="button button-primary" id="sentence-start-button" type="button" hidden disabled>Start Practice</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="sentence-practice-view" hidden>
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Practice Board</h2>
+                <p class="card-subtitle">Half the items use the normal anchor style, half reveal the final word, and the sentence-ending punctuation always stays visible.</p>
+              </div>
+              <div class="pill">Delayed scoring</div>
+            </div>
+
+            <div class="stats-row build-session-stats">
+              <div class="stat-chip">Question <strong id="sentence-progress-label">0 / 0</strong></div>
+              <div class="stat-chip">Time Left <strong id="sentence-time-left">00:45</strong></div>
+              <button class="button button-primary build-next-button" id="sentence-next-button" type="button" disabled>Next Sentence</button>
+            </div>
+
+            <div class="countdown-note" id="sentence-session-note" aria-live="polite">Your pasted set is hidden. Build each sentence before the time runs out.</div>
+
+            <div class="build-practice-shell">
+              <section class="build-question-stage" id="sentence-question-stage" aria-live="polite">
+                <div class="sentence-instructions">Drag words into the blanks, or tap a word and then tap a blank. Tap a filled blank to send that word back. The ending punctuation always stays visible.</div>
+                <div class="sentence-prompt" id="sentence-prompt"></div>
+                <div class="sentence-bank-shell">
+                  <div class="shell-header shell-header-compact">
+                    <strong>Word Bank</strong>
+                    <span>Drop here to return a word</span>
+                  </div>
+                  <div class="sentence-bank" id="sentence-bank"></div>
+                </div>
+              </section>
+
+              <section class="build-results" id="sentence-results" hidden>
+                <div class="build-results-summary">
+                  <h3 id="sentence-results-title">Results</h3>
+                  <p id="sentence-results-score">Finish a round to see your score.</p>
+                </div>
+                <div class="build-results-list" id="sentence-results-list"></div>
+                <div class="markdown-actions build-results-actions">
+                  <button class="button button-secondary" id="sentence-new-set" type="button">Paste New Set</button>
+                  <button class="button button-primary" id="sentence-practice-again" type="button">Practice Again</button>
+                </div>
+              </section>
+            </div>
+
+            <div class="status-message" id="sentence-status" aria-live="polite"></div>
+          </section>
+        </article>
       </section>
     </main>
   </div>

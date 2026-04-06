@@ -69,6 +69,61 @@
       }).join("\n");
     }
 
+    function normalizeWhitespace(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function shuffleArray(items) {
+      const clone = items.slice();
+
+      for (let index = clone.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        const current = clone[index];
+        clone[index] = clone[swapIndex];
+        clone[swapIndex] = current;
+      }
+
+      return clone;
+    }
+
+    function stripSimpleMarkdown(value) {
+      return normalizeWhitespace(
+        String(value || "")
+          .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replace(/`([^`]+)`/g, "$1")
+          .replace(/\*\*([^*]+)\*\*/g, "$1")
+          .replace(/\*([^*]+)\*/g, "$1")
+          .replace(/__([^_]+)__/g, "$1")
+          .replace(/_([^_]+)_/g, "$1")
+          .replace(/^#+\s+/g, "")
+          .replace(/^>\s+/g, "")
+          .replace(/\\([`*_{}\[\]()#+\-.!])/g, "$1")
+      );
+    }
+
+    function splitSentenceEnding(sentence) {
+      const normalized = normalizeWhitespace(sentence);
+      const match = normalized.match(/^(.*?)([.?!]+)$/);
+
+      if (!match) {
+        return {
+          body: normalized,
+          terminalPunctuation: ""
+        };
+      }
+
+      const body = normalizeWhitespace(match[1]);
+      return {
+        body: body || normalized,
+        terminalPunctuation: body ? match[2] : ""
+      };
+    }
+
+    function composeSentence(words, terminalPunctuation) {
+      return normalizeWhitespace(words.join(" ")) + (terminalPunctuation || "");
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const tabs = document.querySelectorAll(".tab-button");
       const panels = document.querySelectorAll(".panel");
@@ -948,11 +1003,663 @@
         }
       });
 
+      // ---------- Writing: build the sentence ----------
+      const sentenceIntakeView = document.getElementById("sentence-intake-view");
+      const sentencePracticeView = document.getElementById("sentence-practice-view");
+      const sentenceTimerSeconds = document.getElementById("sentence-timer-seconds");
+      const sentenceQuestionCount = document.getElementById("sentence-question-count");
+      const sentenceInputNote = document.getElementById("sentence-input-note");
+      const sentencePasteZone = document.getElementById("sentence-paste-zone");
+      const sentencePasteSummary = document.getElementById("sentence-paste-summary");
+      const sentencePasteSummaryTitle = document.getElementById("sentence-paste-summary-title");
+      const sentencePasteSummaryText = document.getElementById("sentence-paste-summary-text");
+      const sentenceClearPaste = document.getElementById("sentence-clear-paste");
+      const sentenceStartButton = document.getElementById("sentence-start-button");
+      const sentenceProgressLabel = document.getElementById("sentence-progress-label");
+      const sentenceTimeLeft = document.getElementById("sentence-time-left");
+      const sentenceNextButton = document.getElementById("sentence-next-button");
+      const sentenceSessionNote = document.getElementById("sentence-session-note");
+      const sentenceQuestionStage = document.getElementById("sentence-question-stage");
+      const sentencePrompt = document.getElementById("sentence-prompt");
+      const sentenceBank = document.getElementById("sentence-bank");
+      const sentenceResults = document.getElementById("sentence-results");
+      const sentenceResultsTitle = document.getElementById("sentence-results-title");
+      const sentenceResultsScore = document.getElementById("sentence-results-score");
+      const sentenceResultsList = document.getElementById("sentence-results-list");
+      const sentencePracticeAgain = document.getElementById("sentence-practice-again");
+      const sentenceNewSet = document.getElementById("sentence-new-set");
+      const sentenceStatus = document.getElementById("sentence-status");
+
+      const sentencePracticeState = {
+        preparedSentences: [],
+        questions: [],
+        currentIndex: -1,
+        results: [],
+        selectedWordId: null,
+        timerId: null,
+        remainingSeconds: Math.max(5, Number(sentenceTimerSeconds.value) || 45),
+        secondsPerQuestion: Math.max(5, Number(sentenceTimerSeconds.value) || 45),
+        sessionActive: false,
+        dragWordId: null
+      };
+
+      function setSentenceStatus(message, tone) {
+        sentenceStatus.textContent = message || "";
+        sentenceStatus.className = "status-message" + (tone ? " " + tone : "");
+      }
+
+      function setSentenceInputMessage(message, tone) {
+        sentenceInputNote.innerHTML = message;
+        sentenceInputNote.className = "countdown-note" + (tone ? " " + tone : "");
+      }
+
+      function setSentenceSessionMessage(message, tone) {
+        sentenceSessionNote.textContent = message || "";
+        sentenceSessionNote.className = "countdown-note" + (tone ? " " + tone : "");
+      }
+
+      function showSentenceIntakeView() {
+        sentenceIntakeView.hidden = false;
+        sentencePracticeView.hidden = true;
+      }
+
+      function showSentencePracticeView() {
+        sentenceIntakeView.hidden = true;
+        sentencePracticeView.hidden = false;
+      }
+
+      function clearSentenceTimer() {
+        if (sentencePracticeState.timerId) {
+          window.clearInterval(sentencePracticeState.timerId);
+          sentencePracticeState.timerId = null;
+        }
+      }
+
+      function getSentenceSecondsSetting() {
+        const seconds = Math.max(5, Math.round(Number(sentenceTimerSeconds.value) || 45));
+        sentenceTimerSeconds.value = String(seconds);
+        return seconds;
+      }
+
+      function updateSentenceTimeDisplay() {
+        sentenceTimeLeft.textContent = formatTime(sentencePracticeState.remainingSeconds);
+      }
+
+      function updateSentenceProgressDisplay() {
+        const total = sentencePracticeState.preparedSentences.length;
+
+        if (!total) {
+          sentenceProgressLabel.textContent = "0 / 0";
+          return;
+        }
+
+        if (sentencePracticeState.sessionActive) {
+          sentenceProgressLabel.textContent = String(sentencePracticeState.currentIndex + 1) + " / " + String(total);
+          return;
+        }
+
+        if (sentencePracticeState.results.length === total && total > 0) {
+          sentenceProgressLabel.textContent = String(total) + " / " + String(total);
+          return;
+        }
+
+        sentenceProgressLabel.textContent = "0 / " + String(total);
+      }
+
+      function updateSentenceQuestionCount(count) {
+        sentenceQuestionCount.textContent = String(count);
+      }
+
+      function extractSentencePrompts(source) {
+        const pattern = /^\s*(?:\d+\s*[.):-]\s+|\d+\s+|[-*+]\s+)(.+?)\s*$/;
+
+        return source
+          .replace(/\r\n?/g, "\n")
+          .split("\n")
+          .map((line) => line.match(pattern))
+          .filter(Boolean)
+          .map((match) => stripSimpleMarkdown(match[1]))
+          .filter((sentence) => sentence.split(/\s+/).length >= 2);
+      }
+
+      function setSentencePasteZoneReady(isReady, count) {
+        sentencePasteZone.classList.toggle("is-ready", isReady);
+        sentencePasteZone.innerHTML = isReady
+          ? `
+            <div>
+              <strong>Set Captured</strong>
+              <p>${count} numbered sentence${count === 1 ? "" : "s"} received. The original text stays hidden. Paste again here any time to replace the set.</p>
+            </div>
+          `
+          : `
+            <div>
+              <strong>Paste Sentence Set</strong>
+              <p>Click here, then press <kbd>Ctrl</kbd> + <kbd>V</kbd> or <kbd>Cmd</kbd> + <kbd>V</kbd>. The app will accept the pasted text but will not reveal the questions.</p>
+            </div>
+          `;
+      }
+
+      function resetSentencePasteState() {
+        sentencePracticeState.preparedSentences = [];
+        sentencePracticeState.questions = [];
+        sentencePracticeState.results = [];
+        sentencePracticeState.currentIndex = -1;
+        sentencePracticeState.selectedWordId = null;
+        sentencePracticeState.dragWordId = null;
+        sentencePracticeState.sessionActive = false;
+        sentencePracticeState.remainingSeconds = getSentenceSecondsSetting();
+        clearSentenceTimer();
+        updateSentenceQuestionCount(0);
+        setSentencePasteZoneReady(false, 0);
+        sentencePasteSummary.hidden = true;
+        sentenceClearPaste.hidden = true;
+        sentenceStartButton.hidden = true;
+        sentenceStartButton.disabled = true;
+        sentencePrompt.innerHTML = "";
+        sentenceBank.innerHTML = "";
+        sentenceResults.hidden = true;
+        sentenceQuestionStage.hidden = false;
+        setSentenceStatus("", "");
+        updateSentenceProgressDisplay();
+        updateSentenceTimeDisplay();
+      }
+
+      function refreshSentenceSessionNote() {
+        if (!sentencePracticeState.sessionActive) {
+          if (sentencePracticeState.results.length === sentencePracticeState.preparedSentences.length && sentencePracticeState.preparedSentences.length > 0) {
+            setSentenceSessionMessage("Round finished. Review the correct sentences below or run the same set again.");
+          } else {
+            setSentenceSessionMessage("Your pasted set is hidden. Build each sentence before the time runs out.");
+          }
+          return;
+        }
+
+        if (sentencePracticeState.remainingSeconds <= 10) {
+          setSentenceSessionMessage("Final 10 seconds. Lock in your order or the app will jump to the next sentence.", "is-alert");
+        } else {
+          setSentenceSessionMessage("Build the sentence, then press Next Sentence when you want to continue.");
+        }
+      }
+
+      function syncSentencePracticeSummary() {
+        updateSentenceProgressDisplay();
+        updateSentenceTimeDisplay();
+        refreshSentenceSessionNote();
+      }
+
+      function createSentenceQuestion(sentence, questionIndex, revealMode) {
+        const sentenceParts = splitSentenceEnding(sentence);
+        const words = sentenceParts.body.split(" ").filter(Boolean);
+        const lastWordIndex = words.length - 1;
+
+        let anchorIndex = lastWordIndex;
+        if (revealMode !== "last" && lastWordIndex > 0) {
+          const anchorCandidates = words
+            .map((word, index) => (index !== lastWordIndex && /[A-Za-z0-9]/.test(word) ? index : -1))
+            .filter((index) => index >= 0);
+
+          anchorIndex = anchorCandidates.length
+            ? anchorCandidates[Math.floor(Math.random() * anchorCandidates.length)]
+            : 0;
+        }
+
+        const wordItems = shuffleArray(
+          words
+            .map((word, wordIndex) => ({
+              id: "sentence-" + questionIndex + "-" + wordIndex,
+              word,
+              wordIndex,
+              placedIndex: null
+            }))
+            .filter((item) => item.wordIndex !== anchorIndex)
+        );
+
+        return {
+          sentence: composeSentence(words, sentenceParts.terminalPunctuation),
+          words,
+          terminalPunctuation: sentenceParts.terminalPunctuation,
+          anchorIndex,
+          revealMode,
+          wordItems
+        };
+      }
+
+      function buildSentenceQuestions(sentences) {
+        const lastWordCount = Math.floor(sentences.length / 2);
+        const shuffledIndices = shuffleArray(sentences.map((sentence, index) => index));
+        const lastWordQuestionIndexes = new Set(shuffledIndices.slice(0, lastWordCount));
+
+        return sentences.map((sentence, index) => createSentenceQuestion(
+          sentence,
+          index,
+          lastWordQuestionIndexes.has(index) ? "last" : "random"
+        ));
+      }
+
+      function getActiveSentenceQuestion() {
+        return sentencePracticeState.questions[sentencePracticeState.currentIndex] || null;
+      }
+
+      function findSentenceWord(question, wordId) {
+        return question ? question.wordItems.find((item) => item.id === wordId) || null : null;
+      }
+
+      function findSentenceWordInSlot(question, slotIndex) {
+        return question ? question.wordItems.find((item) => item.placedIndex === slotIndex) || null : null;
+      }
+
+      function buildSentenceAnswer(question) {
+        const builtWords = question.words.map((word, wordIndex) => {
+          if (wordIndex === question.anchorIndex) {
+            return word;
+          }
+
+          const placedWord = findSentenceWordInSlot(question, wordIndex);
+          return placedWord ? placedWord.word : "_____";
+        });
+
+        return composeSentence(builtWords, question.terminalPunctuation);
+      }
+
+      function selectSentenceWord(wordId) {
+        sentencePracticeState.selectedWordId = sentencePracticeState.selectedWordId === wordId ? null : wordId;
+        renderSentenceQuestion();
+      }
+
+      function returnSentenceWordToBank(wordId) {
+        const question = getActiveSentenceQuestion();
+        const word = findSentenceWord(question, wordId);
+
+        if (!word) {
+          return;
+        }
+
+        word.placedIndex = null;
+        if (sentencePracticeState.selectedWordId === wordId) {
+          sentencePracticeState.selectedWordId = null;
+        }
+
+        renderSentenceQuestion();
+      }
+
+      function placeSentenceWord(wordId, slotIndex) {
+        const question = getActiveSentenceQuestion();
+
+        if (!question || slotIndex === question.anchorIndex) {
+          return;
+        }
+
+        const word = findSentenceWord(question, wordId);
+        if (!word) {
+          return;
+        }
+
+        const previousIndex = word.placedIndex;
+        const occupyingWord = findSentenceWordInSlot(question, slotIndex);
+
+        if (previousIndex === slotIndex) {
+          sentencePracticeState.selectedWordId = null;
+          renderSentenceQuestion();
+          return;
+        }
+
+        if (occupyingWord && occupyingWord.id !== wordId) {
+          occupyingWord.placedIndex = previousIndex === null ? null : previousIndex;
+        }
+
+        word.placedIndex = slotIndex;
+        sentencePracticeState.selectedWordId = null;
+        renderSentenceQuestion();
+      }
+
+      function handleSentenceSlotClick(slotIndex) {
+        const question = getActiveSentenceQuestion();
+
+        if (!question || slotIndex === question.anchorIndex) {
+          return;
+        }
+
+        const occupyingWord = findSentenceWordInSlot(question, slotIndex);
+        if (occupyingWord) {
+          returnSentenceWordToBank(occupyingWord.id);
+          return;
+        }
+
+        if (sentencePracticeState.selectedWordId) {
+          placeSentenceWord(sentencePracticeState.selectedWordId, slotIndex);
+        }
+      }
+
+      function renderSentenceQuestion() {
+        const question = getActiveSentenceQuestion();
+
+        if (!question) {
+          sentencePrompt.innerHTML = "";
+          sentenceBank.innerHTML = "";
+          return;
+        }
+
+        sentencePrompt.innerHTML = "";
+        question.words.forEach((word, wordIndex) => {
+          if (wordIndex === question.anchorIndex) {
+            const anchor = document.createElement("span");
+            anchor.className = "sentence-anchor";
+            anchor.textContent = word;
+            sentencePrompt.appendChild(anchor);
+            return;
+          }
+
+          const placedWord = findSentenceWordInSlot(question, wordIndex);
+          const slot = document.createElement("button");
+          slot.type = "button";
+          slot.className = "sentence-slot" + (placedWord ? " is-filled" : "") + (sentencePracticeState.selectedWordId && !placedWord ? " is-selected-target" : "");
+          slot.textContent = placedWord ? placedWord.word : "_____";
+          slot.setAttribute("aria-label", placedWord ? "Placed word " + placedWord.word : "Empty sentence slot");
+
+          slot.addEventListener("click", () => {
+            handleSentenceSlotClick(wordIndex);
+          });
+
+          slot.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            slot.classList.add("is-drop-target");
+          });
+
+          slot.addEventListener("dragleave", () => {
+            slot.classList.remove("is-drop-target");
+          });
+
+          slot.addEventListener("drop", (event) => {
+            event.preventDefault();
+            slot.classList.remove("is-drop-target");
+
+            const wordId = event.dataTransfer.getData("text/plain") || sentencePracticeState.dragWordId;
+            if (wordId) {
+              placeSentenceWord(wordId, wordIndex);
+            }
+          });
+
+          if (placedWord) {
+            slot.draggable = true;
+            slot.addEventListener("dragstart", (event) => {
+              sentencePracticeState.dragWordId = placedWord.id;
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", placedWord.id);
+              slot.classList.add("is-dragging");
+            });
+
+            slot.addEventListener("dragend", () => {
+              sentencePracticeState.dragWordId = null;
+              slot.classList.remove("is-dragging");
+            });
+          }
+
+          sentencePrompt.appendChild(slot);
+        });
+
+        if (question.terminalPunctuation) {
+          const punctuation = document.createElement("span");
+          punctuation.className = "sentence-terminal-punctuation";
+          punctuation.textContent = question.terminalPunctuation;
+          sentencePrompt.appendChild(punctuation);
+        }
+
+        sentenceBank.innerHTML = "";
+        question.wordItems.filter((item) => item.placedIndex === null).forEach((word) => {
+          const wordButton = document.createElement("button");
+          wordButton.type = "button";
+          wordButton.className = "sentence-bank-word" + (sentencePracticeState.selectedWordId === word.id ? " is-selected" : "");
+          wordButton.textContent = word.word;
+          wordButton.draggable = true;
+
+          wordButton.addEventListener("click", () => {
+            selectSentenceWord(word.id);
+          });
+
+          wordButton.addEventListener("dragstart", (event) => {
+            sentencePracticeState.dragWordId = word.id;
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", word.id);
+            wordButton.classList.add("is-dragging");
+          });
+
+          wordButton.addEventListener("dragend", () => {
+            sentencePracticeState.dragWordId = null;
+            wordButton.classList.remove("is-dragging");
+          });
+
+          sentenceBank.appendChild(wordButton);
+        });
+      }
+
+      sentenceBank.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        sentenceBank.classList.add("is-drop-target");
+      });
+
+      sentenceBank.addEventListener("dragleave", () => {
+        sentenceBank.classList.remove("is-drop-target");
+      });
+
+      sentenceBank.addEventListener("drop", (event) => {
+        event.preventDefault();
+        sentenceBank.classList.remove("is-drop-target");
+
+        const wordId = event.dataTransfer.getData("text/plain") || sentencePracticeState.dragWordId;
+        if (wordId) {
+          returnSentenceWordToBank(wordId);
+        }
+      });
+
+      function captureSentenceResult(reason) {
+        const question = getActiveSentenceQuestion();
+
+        if (!question) {
+          return;
+        }
+
+        const answer = buildSentenceAnswer(question);
+        sentencePracticeState.results.push({
+          questionNumber: sentencePracticeState.currentIndex + 1,
+          answer,
+          sentence: question.sentence,
+          isCorrect: answer === question.sentence,
+          reason
+        });
+      }
+
+      function finishSentencePractice() {
+        clearSentenceTimer();
+        sentencePracticeState.sessionActive = false;
+        sentencePracticeState.currentIndex = -1;
+        sentencePracticeState.selectedWordId = null;
+        sentencePracticeState.dragWordId = null;
+        sentencePracticeState.remainingSeconds = 0;
+
+        const total = sentencePracticeState.results.length;
+        const correct = sentencePracticeState.results.filter((item) => item.isCorrect).length;
+
+        sentenceQuestionStage.hidden = true;
+        sentenceResults.hidden = false;
+        sentenceNextButton.disabled = true;
+
+        sentenceResultsTitle.textContent = String(correct) + " / " + String(total) + " correct";
+        sentenceResultsScore.textContent = "You completed " + String(total) + " sentence" + (total === 1 ? "" : "s") + ". Review the originals below.";
+        sentenceResultsList.innerHTML = sentencePracticeState.results.map((result) => `
+          <article class="build-result-item ${result.isCorrect ? "is-correct" : "is-wrong"}">
+            <div class="build-result-topline">
+              <div class="build-result-title">Sentence ${result.questionNumber}</div>
+              <div class="build-result-badge" aria-label="${result.isCorrect ? "Correct" : "Incorrect"}">${result.isCorrect ? "&#10003;" : "&#10005;"}</div>
+            </div>
+            <p class="build-result-answer"><strong>Your build:</strong> ${escapeHtml(result.answer)}</p>
+            <p class="build-result-correct"><strong>Correct sentence:</strong> ${escapeHtml(result.sentence)}</p>
+          </article>
+        `).join("");
+
+        setSentenceStatus(correct === total ? "Excellent round. Every sentence matched the source." : "Round complete. Review the missed sentences and try again.", correct === total ? "success" : "");
+        syncSentencePracticeSummary();
+      }
+
+      function advanceSentenceQuestion(reason) {
+        captureSentenceResult(reason);
+
+        if (sentencePracticeState.currentIndex >= sentencePracticeState.questions.length - 1) {
+          finishSentencePractice();
+          return;
+        }
+
+        loadSentenceQuestion(sentencePracticeState.currentIndex + 1);
+      }
+
+      function loadSentenceQuestion(questionIndex) {
+        clearSentenceTimer();
+
+        const question = sentencePracticeState.questions[questionIndex];
+        if (!question) {
+          finishSentencePractice();
+          return;
+        }
+
+        question.wordItems.forEach((word) => {
+          word.placedIndex = null;
+        });
+
+        sentencePracticeState.currentIndex = questionIndex;
+        sentencePracticeState.selectedWordId = null;
+        sentencePracticeState.dragWordId = null;
+        sentencePracticeState.remainingSeconds = sentencePracticeState.secondsPerQuestion;
+        sentencePracticeState.sessionActive = true;
+
+        sentenceResults.hidden = true;
+        sentenceQuestionStage.hidden = false;
+        sentenceNextButton.disabled = false;
+        setSentenceStatus("", "");
+        syncSentencePracticeSummary();
+        renderSentenceQuestion();
+
+        sentencePracticeState.timerId = window.setInterval(() => {
+          sentencePracticeState.remainingSeconds -= 1;
+
+          if (sentencePracticeState.remainingSeconds <= 0) {
+            sentencePracticeState.remainingSeconds = 0;
+            syncSentencePracticeSummary();
+            setSentenceStatus("Time ran out for that sentence, so the app moved on automatically.", "error");
+            advanceSentenceQuestion("timeout");
+            return;
+          }
+
+          syncSentencePracticeSummary();
+        }, 1000);
+      }
+
+      function processSentencePaste(pastedText) {
+        const sentences = extractSentencePrompts(pastedText);
+        updateSentenceQuestionCount(sentences.length);
+
+        if (!sentences.length) {
+          sentencePracticeState.preparedSentences = [];
+          sentenceStartButton.hidden = true;
+          sentenceStartButton.disabled = true;
+          sentenceClearPaste.hidden = true;
+          sentencePasteSummary.hidden = true;
+          setSentencePasteZoneReady(false, 0);
+          setSentenceInputMessage("No valid numbered sentences were found in that paste. Use lines like <code>1. Sentence here</code>, <code>2) Sentence here</code>, or <code>3 Sentence here</code>.", "is-danger");
+          return;
+        }
+
+        sentencePracticeState.preparedSentences = sentences;
+        sentencePracticeState.questions = [];
+        sentencePracticeState.results = [];
+        sentencePracticeState.currentIndex = -1;
+        sentencePracticeState.sessionActive = false;
+        sentencePracticeState.selectedWordId = null;
+        sentencePracticeState.dragWordId = null;
+        sentencePracticeState.remainingSeconds = getSentenceSecondsSetting();
+        clearSentenceTimer();
+
+        setSentencePasteZoneReady(true, sentences.length);
+        sentencePasteSummary.hidden = false;
+        sentencePasteSummaryTitle.textContent = String(sentences.length) + " sentence" + (sentences.length === 1 ? "" : "s") + " ready";
+        sentencePasteSummaryText.textContent = "The source remains hidden. When you start, the round will mix standard anchor items with last-word-revealed items.";
+        sentenceClearPaste.hidden = false;
+        sentenceStartButton.hidden = false;
+        sentenceStartButton.disabled = false;
+        setSentenceInputMessage("Pasted successfully. The sentences were captured without being revealed back to you.");
+        setSentenceStatus("", "");
+        syncSentencePracticeSummary();
+      }
+
+      function startSentencePractice() {
+        if (!sentencePracticeState.preparedSentences.length) {
+          setSentenceInputMessage("Paste a numbered sentence set first, then start the round.", "is-danger");
+          return;
+        }
+
+        sentencePracticeState.secondsPerQuestion = getSentenceSecondsSetting();
+        sentencePracticeState.questions = buildSentenceQuestions(sentencePracticeState.preparedSentences);
+        sentencePracticeState.results = [];
+        sentencePracticeState.remainingSeconds = sentencePracticeState.secondsPerQuestion;
+        sentenceResultsList.innerHTML = "";
+        showSentencePracticeView();
+        setSentenceStatus("Practice round started. Correctness will appear after the final sentence.", "success");
+        loadSentenceQuestion(0);
+      }
+
+      function returnToSentenceIntake() {
+        resetSentencePasteState();
+        showSentenceIntakeView();
+        setSentenceInputMessage("Click the paste area and paste a numbered list like <code>1. Sentence here</code>, <code>2) Sentence here</code>, or <code>3 Sentence here</code>. The pasted text is processed without being shown back to you.");
+        sentencePasteZone.focus();
+      }
+
+      sentencePasteZone.addEventListener("click", () => {
+        sentencePasteZone.focus();
+      });
+
+      sentencePasteZone.addEventListener("paste", (event) => {
+        event.preventDefault();
+        const pastedText = event.clipboardData ? event.clipboardData.getData("text/plain") : "";
+        processSentencePaste(pastedText);
+      });
+
+      sentenceClearPaste.addEventListener("click", () => {
+        resetSentencePasteState();
+        setSentenceInputMessage("Set cleared. Paste a new numbered list whenever you are ready.");
+        sentencePasteZone.focus();
+      });
+
+      sentenceStartButton.addEventListener("click", startSentencePractice);
+      sentencePracticeAgain.addEventListener("click", startSentencePractice);
+      sentenceNewSet.addEventListener("click", returnToSentenceIntake);
+
+      sentenceNextButton.addEventListener("click", () => {
+        if (!sentencePracticeState.sessionActive) {
+          return;
+        }
+
+        advanceSentenceQuestion("next");
+      });
+
+      sentenceTimerSeconds.addEventListener("input", () => {
+        if (sentencePracticeState.sessionActive) {
+          return;
+        }
+
+        const seconds = getSentenceSecondsSetting();
+        sentencePracticeState.secondsPerQuestion = seconds;
+        sentencePracticeState.remainingSeconds = seconds;
+        updateSentenceTimeDisplay();
+      });
+
       updateTextCounts();
       resetTimerFromInput();
+      resetSentencePasteState();
+      showSentenceIntakeView();
+      syncSentencePracticeSummary();
 
       // Cleanup object URLs and media streams if the page closes or reloads.
       window.addEventListener("beforeunload", () => {
+        clearSentenceTimer();
         clearCurrentMedia();
         clearRecordingAudio();
         stopRecorderStream();
