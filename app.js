@@ -166,7 +166,7 @@
       let repeatStopTime = null;
       let isRepeatPlayback = false;
 
-      const MEDIA_SKIP_SECONDS = 10;
+      const MEDIA_SKIP_SECONDS = 5; //10;
       const MIN_REPEAT_SECONDS = 0.25;
       const REPEAT_STOP_BUFFER = 0.05;
 
