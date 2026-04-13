@@ -2217,6 +2217,64 @@
       resetCompleteWordsState();
       showCompleteWordsIntakeView();
 
+      // ── Copy Prompt Buttons ──────────────────────────────────────────────────
+      // Prompt text lives in /prompts/*.js — edit those files to change a prompt.
+
+      const COPY_PROMPT_KEYS = {
+        "copy-email-prompt": "writingEmail",
+        "copy-academic-prompt": "writingAcademic",
+        "copy-sentence-prompt": "buildSentence",
+        "copy-words-prompt": "completeWords",
+      };
+
+      function writeToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+        return new Promise((resolve, reject) => {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;opacity:0;pointer-events:none;";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+
+      async function copyPromptByKey(key, btn) {
+        const originalLabel = btn.textContent;
+        const text = (window.PROMPTS || {})[key];
+        if (typeof text !== "string") {
+          console.error("Prompt not found for key:", key);
+          btn.textContent = "Copy failed";
+          setTimeout(() => { btn.textContent = originalLabel; }, 1500);
+          return;
+        }
+        try {
+          await writeToClipboard(text);
+          btn.textContent = "Copied!";
+        } catch (err) {
+          console.error("Copy prompt failed:", err);
+          btn.textContent = "Copy failed";
+        }
+        setTimeout(() => { btn.textContent = originalLabel; }, 1500);
+      }
+
+      Object.keys(COPY_PROMPT_KEYS).forEach((btnId) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          copyPromptByKey(COPY_PROMPT_KEYS[btnId], this);
+        });
+      });
+
       // Cleanup object URLs and media streams if the page closes or reloads.
       window.addEventListener("beforeunload", () => {
         clearSentenceTimer();

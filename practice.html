@@ -9,6 +9,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="styles.css">
+  <script src="prompts/writing-email.js" defer></script>
+  <script src="prompts/writing-academic.js" defer></script>
+  <script src="prompts/build-sentence.js" defer></script>
+  <script src="prompts/complete-words.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -85,7 +89,7 @@
             <div class="card-header">
               <div>
                 <h2 class="card-title">Voice Recorder</h2>
-                <p class="card-subtitle">Record yourself repeating answers or practicing fluency. Start a new take anytime and download it when you want to review later.</p>
+                <p class="card-subtitle">Record yourself and listen. Nothing will be saved - So record as many times as you wish to.</p>
               </div>
               <div class="pill">One take at a time</div>
             </div>
@@ -130,16 +134,21 @@
             <div class="card-header">
               <div>
                 <h2 class="card-title">Markdown Editor</h2>
-                <p class="card-subtitle">Paste a real question.</p>
+                <p class="card-subtitle">Click copy prompt, Give it to an AI.</p>
               </div>
               <div class="pill">Edit then preview</div>
+            </div>
+
+            <div class="prompt-copy-row">
+              <button class="button button-secondary" id="copy-email-prompt" type="button">Copy Email Prompt</button>
+              <button class="button button-secondary" id="copy-academic-prompt" type="button">Copy Academic Prompt</button>
             </div>
 
             <div class="markdown-single" id="markdown-shell">
               <section class="editor-shell markdown-editor-view" id="markdown-editor-view">
                 <div class="shell-header">
                   <strong>Markdown Input</strong>
-                  <span>Write first, preview on demand</span>
+                  <span>Paste the task that AI gave you</span>
                 </div>
                 <label class="visually-hidden" for="markdown-input">Markdown editor</label>
                 <textarea class="text-area" id="markdown-input" spellcheck="true" placeholder="# Writing Plan
@@ -174,7 +183,7 @@ Use examples, transitions, and quick structure notes here."></textarea>
             <div class="card-header">
               <div>
                 <h2 class="card-title">Timed Writing Practice</h2>
-                
+
               </div>
               <div class="pill">Words <strong id="word-count">0</strong></div>
             </div>
@@ -192,7 +201,7 @@ Use examples, transitions, and quick structure notes here."></textarea>
               </div>
             </div>
 
-            <div class="countdown-note" id="countdown-note" aria-live="polite">Set your time and press start when you are ready.</div>
+            <!-- <div class="countdown-note" id="countdown-note" aria-live="polite">Set your time and press start when you are ready.</div> -->
 
             <section class="editor-shell">
               <div class="shell-header">
@@ -214,9 +223,13 @@ Use examples, transitions, and quick structure notes here."></textarea>
             <div class="card-header">
               <div>
                 <h2 class="card-title">Sentence Set Intake</h2>
-                <p class="card-subtitle">Paste numbered sentences once, keep them hidden, and move straight into a full-screen style practice board.</p>
+                <p class="card-subtitle">Click Copy prompt, give it to an AI, and paste the <b>Sentence Set</b> it gives you, in our pasting area down below.</p>
               </div>
               <div class="pill">Paste only</div>
+            </div>
+
+            <div class="prompt-copy-row">
+              <button class="button button-secondary" id="copy-sentence-prompt" type="button">Copy Prompt</button>
             </div>
 
             <div class="timer-setup build-config-row">
@@ -227,7 +240,7 @@ Use examples, transitions, and quick structure notes here."></textarea>
               <div class="stat-chip">Loaded <strong id="sentence-question-count">0</strong></div>
             </div>
 
-            <div class="countdown-note" id="sentence-input-note" aria-live="polite">Click the paste area and paste a numbered list like <code>1. Sentence here</code>, <code>2) Sentence here</code>, or <code>3 Sentence here</code>. The pasted text is processed without being shown back to you.</div>
+            <!-- <div class="countdown-note" id="sentence-input-note" aria-live="polite">Click the paste area and paste a numbered list like <code>1. Sentence here</code>, <code>2) Sentence here</code>, or <code>3 Sentence here</code>. The pasted text is processed without being shown back to you.</div> -->
 
             <div class="build-paste-shell">
               <div class="build-paste-zone" id="sentence-paste-zone" tabindex="0" role="button" aria-label="Paste numbered sentences here">
@@ -303,9 +316,15 @@ Use examples, transitions, and quick structure notes here."></textarea>
             <div class="card-header">
               <div>
                 <h2 class="card-title">Complete Words Intake</h2>
-                <p class="card-subtitle">Paste one paragraph once, keep it hidden, then complete 10 missing word parts directly inside the paragraph.</p>
+                <p class="card-subtitle">Click Copy prompt, give it to an AI, and paste the <b>Paragraph</b> it gives you, in our pasting area down below.
+                <b>Paste one paragraph at a time!</b>
+                </p>
               </div>
               <div class="pill">Paste only</div>
+            </div>
+
+            <div class="prompt-copy-row">
+              <button class="button button-secondary" id="copy-words-prompt" type="button">Copy Prompt</button>
             </div>
 
             <div class="timer-setup build-config-row">
