@@ -1,6 +1,6 @@
 window.PROMPTS = window.PROMPTS || {};
 window.PROMPTS.completeWords = `I am practicing for TOEFL test, (the post Jan 2026 format).
-Before we begin the practice session, please search online and understand the post Jan 2026 format of TOEFL, so that you know what to give me and how the real test will be. (to have a correct and realistic practice session)
+Before we begin the practice session, please search the official ets website and instructions online and understand the post Jan 2026 format of TOEFL, so that you know what to give me and how the real test will be. (to have a correct and realistic practice session)
 
 Today, I want to practice the 'Complete the Words' task of TOEFL with you. so here is how it should go:
 
