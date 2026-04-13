@@ -10,5 +10,5 @@ After that, I will time myself, and write the email for you. after that, your ta
 
 We continue like that, until it is enough.
 
-Fanally, You must give me the task (text) inside a code snippet, or something that has the copy button, so that I can simply copy that by clicking copy button.
+Fanally, You must give me the task (text) inside a code snippet, or something that has the copy button, so that I can simply copy that by clicking copy button. Please do not put any additional thing inside the snippet, like title, summary, additional info...etc - just stright to the point.
 `;

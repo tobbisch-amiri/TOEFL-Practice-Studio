@@ -22,4 +22,5 @@ please keep in mind that the length, difficulty level and context of the sentenc
 
 
 Fanally, You must give me the task (sentences) inside a code snippet, or something that has the copy button, so that I can simply copy that by clicking copy button.
+Please do not put any additional thing inside the snippet, like title, summary, additional info...etc - just stright to the point.
 `;

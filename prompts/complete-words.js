@@ -15,4 +15,5 @@ Topics: Vary the topics across STEM, Social Sciences, Arts, and Business.
 No Commentary: Do not provide "tips," "answer keys," or introductory filler text (e.g., "Here are your texts..."). Just provide the raw text blocks.
 
 Fanally, You must give me the tasks (texts) inside separate code snippets, or something that has the copy button, so that I can simply copy that by clicking copy button.
+Please do not put any additional thing inside the snippet, like title, summary, additional info...etc - just stright to the point.
 `;
